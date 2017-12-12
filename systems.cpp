@@ -25,6 +25,7 @@ void RenderSystem::renderEntity(entityx::Entity entity) {
 	const auto sdata = *entity.component<SpatialData>();
 	vec2f fpos = _view.viewCoordFromGlobal(sdata.position);
 	vec2i ipos = vec2i(fpos.x, fpos.y);
+	ipos.y -= sdata.z;
 	switch(renderable.type) {
 		case Renderable::Type::Circle : {
 			filledCircleColor(_renderer, ipos.x, ipos.y, renderable.circle_radius, SDL_ColortoUint32(renderable.color));
@@ -62,7 +63,6 @@ void RenderSystem::renderEntity(entityx::Entity entity) {
 			break;
 		}
 		case Renderable::Type::Cube : {
-			return; // TODO: render cubes :)
 			float width = 50;
 			vec2f xstep(-width, 0);
 			xstep = _view.viewCoordFromGlobal(xstep);
@@ -73,9 +73,9 @@ void RenderSystem::renderEntity(entityx::Entity entity) {
 			vx[0] = ipos.x;
 			vy[0] = ipos.y;
 			vx[1] = ipos.x;
-			vy[1] = ipos.y - width - sdata.z;
+			vy[1] = ipos.y - width;
 			vx[2] = ipos.x + xstep.x;
-			vy[2] = ipos.y + xstep.y - width - sdata.z;
+			vy[2] = ipos.y + xstep.y - width;
 			vx[3] = ipos.x + xstep.x;
 			vy[3] = ipos.y + xstep.y;
 
@@ -83,7 +83,7 @@ void RenderSystem::renderEntity(entityx::Entity entity) {
 			polygonColor(_renderer, vx, vy, 4, SDL_ColortoUint32(SDL_Colors::BLACK));
 
 			vx[2] = ipos.x + ystep.x;
-			vy[2] = ipos.y + ystep.y - width - sdata.z;
+			vy[2] = ipos.y + ystep.y - width;
 			vx[3] = ipos.x + ystep.x;
 			vy[3] = ipos.y + ystep.y;
 
@@ -91,9 +91,9 @@ void RenderSystem::renderEntity(entityx::Entity entity) {
 			polygonColor(_renderer, vx, vy, 4, SDL_ColortoUint32(SDL_Colors::BLACK));
 
 			vx[0] = ipos.x + xstep.x;
-			vy[0] = ipos.y + xstep.y - width - sdata.z;
+			vy[0] = ipos.y + xstep.y - width;
 			vx[3] = ipos.x + ystep.x + xstep.x;
-			vy[3] = ipos.y + ystep.y + xstep.y - width - sdata.z;
+			vy[3] = ipos.y + ystep.y + xstep.y - width;
 
 			filledPolygonColor(_renderer, vx, vy, 4, SDL_ColortoUint32(SDL_Colors::LIGHTGREY));
 			polygonColor(_renderer, vx, vy, 4, SDL_ColortoUint32(SDL_Colors::BLACK));
