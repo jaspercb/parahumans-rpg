@@ -27,18 +27,18 @@ void RenderSystem::renderEntity(entityx::Entity entity) {
 	vec2i ipos = vec2i(fpos.x, fpos.y);
 	ipos.y -= sdata.z;
 	switch(renderable.type) {
-		case Renderable::Type::Circle : {
+		case Renderable::Type::Circle: {
 			filledCircleColor(_renderer, ipos.x, ipos.y, renderable.circle_radius, SDL_ColortoUint32(renderable.color));
 			break;
 		}
-		case Renderable::Type::Line : {
+		case Renderable::Type::Line: {
 			vec2i offset(renderable.line_displacement_x, renderable.line_displacement_y);
 			vec2i start = ipos - offset/2.0;
 			vec2i end   = ipos + offset/2.0;
 			lineColor(_renderer, start.x, start.y, end.x, end.y, SDL_ColortoUint32(renderable.color));
 			break;
 		}
-		case Renderable::Type::Person : {
+		case Renderable::Type::Person: {
 			vec2f orientation(0, 1);
 			float walkspeed = 8;
 			orientation.rotate(sdata.orientation);
@@ -62,7 +62,9 @@ void RenderSystem::renderEntity(entityx::Entity entity) {
 			}
 			break;
 		}
-		case Renderable::Type::Cube : {
+		case Renderable::Type::Cube:
+		{
+			break; // TOO SLOW
 			float width = 50;
 			vec2f xstep(-width, 0);
 			xstep = _view.viewCoordFromGlobal(xstep);

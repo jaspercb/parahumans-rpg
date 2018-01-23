@@ -8,8 +8,8 @@
 #include "systems.hpp"
 #include "components.hpp"
 
-#define SCREEN_WIDTH 640
-#define SCREEN_HEIGHT 480
+#define SCREEN_WIDTH 1000
+#define SCREEN_HEIGHT 700
 #define FPS 60
 
 class ClientApplication: public entityx::EntityX {
@@ -37,8 +37,8 @@ public:
       entity.assign<SpatialData>(vec2f(60*i, 0));
       entity.assign<Renderable>(Renderable::Type::Cube);      
     }
-    for (int x=0; x<10; x++) {
-    for (int y=0; y<10; y++) {
+    for (int x=0; x<20; x++) {
+    for (int y=0; y<20; y++) {
       entityx::Entity entity = entities.create();
       entity.assign<SpatialData>(vec2f(50*x, 50*y), vec2f(0, 0), -50.0);
       entity.assign<Renderable>(Renderable::Type::Cube);
@@ -124,7 +124,7 @@ int main(int argc, char* args[]) {
 			    "parahumans",
 			    SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
 			    SCREEN_WIDTH, SCREEN_HEIGHT,
-			    SDL_WINDOW_SHOWN
+			    SDL_WINDOW_SHOWN // SDL_WINDOW_FULLSCREEN_DESKTOP
 			    );
   if (window == NULL) {
     fprintf(stderr, "Could not create window: %s\n", SDL_GetError());

@@ -1,11 +1,12 @@
 #pragma once
 
-#include <SDL2/SDL.h>
 #include "entityx/entityx.h"
 #include "types.hpp"
 #include <map>
 #include <utility>
 #include <list>
+
+class SDL_Renderer;
 
 struct MovementSystem : public entityx::System<MovementSystem> {
 	void update(entityx::EntityManager &es, entityx::EventManager &events, entityx::TimeDelta dt) override;
@@ -13,7 +14,7 @@ struct MovementSystem : public entityx::System<MovementSystem> {
 
 struct View {
 public:
-	template <typename T> vec2<T> viewCoordFromGlobal(vec2<T> globalpos) const {
+	template <typename T> vec2<T> inline viewCoordFromGlobal(vec2<T> globalpos) const {
 		auto x = (globalpos.x - viewcenter.x);
 		auto y = (globalpos.y - viewcenter.y);
 		return vec2<T>((x - y),
@@ -42,4 +43,3 @@ public:
 private:
 	std::map<std::pair<int, int>, std::list<entityx::Entity>> spatial_hash;
 };
-
