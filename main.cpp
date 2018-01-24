@@ -24,8 +24,9 @@ public:
 			}
 		}
 
-		world.addSystem(std::make_unique<MovementSystem>());
-		world.addSystem(std::make_unique<RenderSystem>(renderer));
+		world.addSystem(std::make_shared<MovementSystem>());
+		world.addSystem(std::make_shared<RenderSystem>(renderer));
+		world.addSystem(std::make_shared<CollisionSystem>(100 /* gridwidth */));
 
 		for (int i=0; i<1; i++) {
 			auto entity = world.registry.create();

@@ -1,11 +1,15 @@
 #pragma once
+#include "events.hpp"
 
 struct World {
 	entt::Registry<Entity> registry;
-	std::list<std::unique_ptr<System>> systems;
+	entt::ManagedBus<MovedEvent, CollidedEvent> bus;
+	std::list<std::shared_ptr<System>> systems;
 
-	void addSystem(std::unique_ptr<System> system) {
+	template<typename SystemType> void addSystem(std::shared_ptr<SystemType> system) {
 		system->world = this;
+		system->init();
+		bus.reg(system);
 		systems.push_back(std::move(system));
 	}
 

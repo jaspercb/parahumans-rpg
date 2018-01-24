@@ -16,6 +16,7 @@ struct World;
 struct System {
 public:
 	System() : world(nullptr) {};
+	virtual void init() {};
 	virtual void update(TimeDelta dt) = 0;
 	World *world;
 };
@@ -51,7 +52,7 @@ struct CollisionSystem : public System {
 public:
 	CollisionSystem(int gridwidth);
 	bool collides(Entity one, Entity two);
-	void receive(MovedEvent e);
+	void receive(const MovedEvent &e);
 	void update(TimeDelta dt) override;
 private:
 	const int gridwidth;

@@ -5,11 +5,13 @@
 #include <map>
 
 void MovementSystem::update(TimeDelta dt) {
-	world->registry.view<SpatialData>().each([dt](auto entity, auto &sdata) {
+	world->registry.view<SpatialData>().each([dt, this](auto entity, auto &sdata) {
 		auto oldpos = sdata.position;
 		sdata.position.x += sdata.velocity.x * dt;
 		sdata.position.y += sdata.velocity.y * dt;
-		// events.emit<MovedEvent>(entity, oldpos, sdata.position);
+		//if (sdata.velocity.x && sdata.velocity.y) {
+			world->bus.publish<MovedEvent>(entity, oldpos, sdata.position);
+		//}
 	});
 };
 
@@ -166,7 +168,7 @@ bool CollisionSystem::collides(Entity one, Entity two) {
 
 // TODO: listen to EntityCreated and EntityDestroyed?
 
-void CollisionSystem::receive(MovedEvent e) {
+void CollisionSystem::receive(const MovedEvent &e) {
 	auto oldPos = e.oldPos;
 	auto oldGridCoords = getGridCoords(oldPos);
 	auto newGridCoords = getGridCoords(e.newPos);
@@ -181,7 +183,7 @@ void CollisionSystem::receive(MovedEvent e) {
 		if (iter != spatial_hash.end()) {
 			for (const auto &entity : iter->second) {
 				if ((e.entity != entity) && collides(e.entity, entity)) {
-					// events.emit<CollidedEvent>(e.entity, entity);
+					world->bus.publish<CollidedEvent>(e.entity, entity);
 				}
 			}
 		}
