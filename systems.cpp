@@ -7,9 +7,11 @@
 using namespace entityx;
 
 void MovementSystem::update(entityx::EntityManager &es, entityx::EventManager &events, entityx::TimeDelta dt) {
-	es.each<SpatialData>([dt](Entity entity, SpatialData &sdata) {
+	es.each<SpatialData>([dt, &events](Entity entity, SpatialData &sdata) {
+		auto oldpos = sdata.position;
 		sdata.position.x += sdata.velocity.x * dt;
 		sdata.position.y += sdata.velocity.y * dt;
+		events.emit<MovedEvent>(entity, oldpos, sdata.position);
 	});
 };
 
@@ -131,3 +133,60 @@ void RenderSystem::update(entityx::EntityManager &es, entityx::EventManager &eve
 	SDL_RenderPresent(renderer);
 	timeSinceStart += dt;
 };
+
+CollisionSystem::CollisionSystem(int gridwidth)
+	: gridwidth(gridwidth)
+{
+	// TODO: register as listener for ThingMoved events
+}
+
+bool CollisionSystem::collides(entityx::Entity one, entityx::Entity two) {
+	if (!one.has_component<Collidable>() || !two.has_component<Collidable>() ||
+		!one.has_component<SpatialData>() || !two.has_component<SpatialData>()) return false;
+	const auto spatial1 = *one.component<SpatialData>();
+	const auto spatial2 = *two.component<SpatialData>();
+	const auto collide1 = *one.component<Collidable>();
+	const auto collide2 = *two.component<Collidable>();
+	switch (collide1.type) {
+	case Collidable::Type::Circle: {
+		switch(collide2.type) {
+		case Collidable::Type::Circle: {
+			// TODO: 3D collisions
+			return (spatial1.position.dist(spatial2.position) < collide1.circle_radius + collide2.circle_radius;
+			break;
+		}
+		}
+		break;
+	}
+	default:
+		assert(false);
+	}
+}
+
+// TODO: listen to EntityCreated and EntityDestroyed?
+
+void CollisionSystem::receive(MovedEvent e) {
+	auto oldPos = e.oldPos;
+	auto oldGridCoords = getGridCoords(oldPos);
+	auto newGridCoords = getGridCoords(e.newPos);
+	if (oldGridCoords != newGridCoords) {
+		spatial_hash[oldGridCoords].erase(e.entity);
+		spatial_hash[newGridCoords].insert(e.entity);
+	}
+	static vec2i ddpos[5] = {{0,0},{1,0},{1,-1},{0,-1},{-1,-1}};
+	for (int i=0; i<5; i++) {
+		auto dpos = ddpos[i];
+		auto iter = spatial_hash.find(newGridCoords + dpos);
+		if (iter != spatial_hash.end()) {
+			for (const auto &entity : iter->second) {
+				if ((e.entity != entity) && collides(e.entity, entity)) {
+					events.emit<CollidedEvent>(e.entity, entity);
+				}
+			}
+		}
+	}
+}
+
+void CollisionSystem::update(entityx::EntityManager &es, entityx::EventManager &events, entityx::TimeDelta dt) {
+	// fuck this nobody liked it anyway 
+}

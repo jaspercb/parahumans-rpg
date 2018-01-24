@@ -2,6 +2,7 @@
 
 #include "entityx/entityx.h"
 #include "types.hpp"
+#include "events.hpp"
 #include <map>
 #include <utility>
 #include <list>
@@ -37,9 +38,14 @@ private:
 
 struct CollisionSystem : public entityx::System<CollisionSystem> {
 public:
-	CollisionSystem() {};
+	CollisionSystem(int gridwidth);
 	bool collides(entityx::Entity one, entityx::Entity two);
+	void receive(MovedEvent e);
 	void update(entityx::EntityManager &es, entityx::EventManager &events, entityx::TimeDelta dt) override;
 private:
-	std::map<std::pair<int, int>, std::list<entityx::Entity>> spatial_hash;
+	const int gridwidth;
+	std::map<vec2i, std::set<entityx::Entity>> spatial_hash;
+	const vec2i getGridCoords(vec2f pos) const {
+		return vec2i(std::floor(pos.x/gridwidth), std::floor(pos.y/gridwidth));
+	}
 };

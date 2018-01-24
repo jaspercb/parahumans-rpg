@@ -49,3 +49,14 @@ struct Renderable {
 		};
 	};
 };
+struct Collidable {
+	enum Type {
+		Circle
+	};
+	Type type;
+	union {
+		struct {
+			float circle_radius;
+		};
+	};
+};

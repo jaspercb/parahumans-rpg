@@ -69,6 +69,19 @@ public:
 		y /= s;
 		return *this;
 	}
+
+	bool operator<(const vec2& other) const {
+		if (x == other.x) return y < other.y;
+		return x < other.x;
+	}
+
+	bool operator==(const vec2& other) const {
+		return (x == other.x) && (y == other.y);
+	}
+	
+	bool operator!=(const vec2& other) const {
+		return !(*this == other);
+	}
 	
 	void set(T x, T y) {
 		this->x = x;
