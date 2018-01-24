@@ -4,15 +4,15 @@
 // run with: ./hello_sdl2
 #include <SDL2/SDL.h>
 #include <stdio.h>
-#include "entityx/entityx.h"
 #include "systems.hpp"
 #include "components.hpp"
+#include "World.hpp"
 
 #define SCREEN_WIDTH 1000
 #define SCREEN_HEIGHT 700
 #define FPS 60
 
-class ClientApplication: public entityx::EntityX {
+class ClientApplication {
 public:
 	explicit ClientApplication(SDL_Window* window) :
 		window(window)
@@ -23,35 +23,36 @@ public:
 				fprintf(stderr, "Could not create renderer: %s\n", SDL_GetError());
 			}
 		}
-		systems.add<MovementSystem>();
-		systems.add<RenderSystem>(renderer);
-		systems.configure();
+
+		world.addSystem(std::make_unique<MovementSystem>());
+		world.addSystem(std::make_unique<RenderSystem>(renderer));
+
 		for (int i=0; i<1; i++) {
-			entityx::Entity entity = entities.create();
-			entity.assign<SpatialData>(vec2f(10*i, 10*i));
-			entity.assign<Renderable>(Renderable::Type::Person);
+			auto entity = world.registry.create();
+			world.registry.assign<SpatialData>(entity, vec2f(10*i, 10*i));
+			world.registry.assign<Renderable>(entity, Renderable::Type::Person);
 			controlled = entity;
 		}
 		for (int i=0; i<10; i++) {
-			entityx::Entity entity = entities.create();
-			entity.assign<SpatialData>(vec2f(60*i, 0));
-			entity.assign<Renderable>(Renderable::Type::Cube);      
+			auto entity = world.registry.create();
+			world.registry.assign<SpatialData>(entity, vec2f(60*i, 0));
+			world.registry.assign<Renderable>(entity, Renderable::Type::Cube);      
 		}
 		for (int x=0; x<20; x++) {
 		for (int y=0; y<20; y++) {
-			entityx::Entity entity = entities.create();
-			entity.assign<SpatialData>(vec2f(50*x, 50*y), vec2f(0, 0), -50.0);
-			entity.assign<Renderable>(Renderable::Type::Cube);
-			}     
+			auto entity = world.registry.create();
+			world.registry.assign<SpatialData>(entity, vec2f(50*x, 50*y), vec2f(0, 0), -50.0);
+			world.registry.assign<Renderable>(entity, Renderable::Type::Cube);
+			}
 		}
 		lastFrameTimeMilliseconds = SDL_GetTicks();
 	}
 
 	void update() {
 		int currentFrameTimeMilliseconds = SDL_GetTicks();
-		float timePassedSeconds = (currentFrameTimeMilliseconds - lastFrameTimeMilliseconds) / 1000.0;
+		TimeDelta timePassedSeconds = (currentFrameTimeMilliseconds - lastFrameTimeMilliseconds) / 1000.0;
 
-		systems.update_all(timePassedSeconds);
+		world.update_all(timePassedSeconds);
 
 		lastFrameTimeMilliseconds = currentFrameTimeMilliseconds;
 		int postFrameTimeMilliseconds = SDL_GetTicks();
@@ -73,10 +74,8 @@ public:
 				if (e.type == SDL_QUIT) quit = true;
 			}
 			// Static key effects
-			if (controlled) {
-				entityx::ComponentHandle<SpatialData> sdata = controlled.component<SpatialData>();
-				if (!sdata.valid()) return;
-				auto& v = sdata->velocity;
+			if (world.registry.valid(controlled) && world.registry.has<SpatialData>(controlled)) {
+				SpatialData& sdata = world.registry.get<SpatialData>(controlled);
 				vec2f accel;
 				if (keys[SDL_SCANCODE_LEFT]) {
 					accel.x -= 1;
@@ -96,10 +95,10 @@ public:
 				}
 				accel.normalize();
 				accel *= 20;
-				v += accel;
-				if (v.x || v.y) sdata->orientation = atan2f(v.y, v.x);
-				v.x *= 0.85;
-				v.y *= 0.85;
+				sdata.velocity += accel;
+				if (sdata.velocity.x || sdata.velocity.y)
+					sdata.orientation = atan2f(sdata.velocity.y, sdata.velocity.x);
+				sdata.velocity *= 0.85;
 			}
 			update();
 		}
@@ -108,7 +107,8 @@ public:
 private:
 	SDL_Window* window;
 	SDL_Renderer* renderer;
-	entityx::Entity controlled;
+	World world;
+	Entity controlled;
 	int lastFrameTimeMilliseconds;
 };
 

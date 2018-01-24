@@ -1,17 +1,15 @@
 #include "systems.hpp"
-#include "components.hpp"
+#include "World.hpp"
 #include "sdlTools.hpp"
 
 #include <map>
 
-using namespace entityx;
-
-void MovementSystem::update(entityx::EntityManager &es, entityx::EventManager &events, entityx::TimeDelta dt) {
-	es.each<SpatialData>([dt, &events](Entity entity, SpatialData &sdata) {
+void MovementSystem::update(TimeDelta dt) {
+	world->registry.view<SpatialData>().each([dt](auto entity, auto &sdata) {
 		auto oldpos = sdata.position;
 		sdata.position.x += sdata.velocity.x * dt;
 		sdata.position.y += sdata.velocity.y * dt;
-		events.emit<MovedEvent>(entity, oldpos, sdata.position);
+		// events.emit<MovedEvent>(entity, oldpos, sdata.position);
 	});
 };
 
@@ -22,9 +20,9 @@ void renderOvalOffset(SDL_Renderer* renderer, View* view, vec2i pos, vec2i offse
 	ellipseColor(renderer, screenpos.x, screenpos.y - height, rx, ry, SDL_ColortoUint32(SDL_Colors::BLACK));
 }
 
-void RenderSystem::renderEntity(entityx::Entity entity) {
-	const auto renderable = *entity.component<Renderable>();
-	const auto sdata = *entity.component<SpatialData>();
+void RenderSystem::renderEntity(Entity entity) {
+	auto sdata = world->registry.get<SpatialData>(entity);
+	auto renderable = world->registry.get<Renderable>(entity);
 	vec2f fpos = _view.viewCoordFromGlobal(sdata.position);
 	vec2i ipos = vec2i(fpos.x, fpos.y);
 	ipos.y -= sdata.z;
@@ -107,7 +105,7 @@ void RenderSystem::renderEntity(entityx::Entity entity) {
 	}
 }
 
-void RenderSystem::update(entityx::EntityManager &es, entityx::EventManager &events, entityx::TimeDelta dt) {
+void RenderSystem::update(TimeDelta dt) {
 	// Fill screen with white
 	SDL_Renderer* renderer = _renderer;
 	const View* view = &_view;
@@ -117,7 +115,7 @@ void RenderSystem::update(entityx::EntityManager &es, entityx::EventManager &eve
 	// distance from camera -> renderable
 	std::multimap<float, Entity> drawqueue;
 
-	es.each<SpatialData, Renderable>([dt, &view, &drawqueue](Entity entity, SpatialData &sdata, Renderable &renderable) {
+	world->registry.view<SpatialData, Renderable>().each([dt, &view, &drawqueue](Entity entity, SpatialData &sdata, Renderable &renderable) {
 		switch(renderable.type) {
 			case Renderable::Type::Cube:
 				drawqueue.emplace(sdata.position.x - 25 + sdata.position.y - 25 + sdata.z, entity);
@@ -140,19 +138,22 @@ CollisionSystem::CollisionSystem(int gridwidth)
 	// TODO: register as listener for ThingMoved events
 }
 
-bool CollisionSystem::collides(entityx::Entity one, entityx::Entity two) {
-	if (!one.has_component<Collidable>() || !two.has_component<Collidable>() ||
-		!one.has_component<SpatialData>() || !two.has_component<SpatialData>()) return false;
-	const auto spatial1 = *one.component<SpatialData>();
-	const auto spatial2 = *two.component<SpatialData>();
-	const auto collide1 = *one.component<Collidable>();
-	const auto collide2 = *two.component<Collidable>();
+bool CollisionSystem::collides(Entity one, Entity two) {
+	if (!world->registry.has<SpatialData>(one)
+	 || !world->registry.has<Collidable>(one)
+	 || !world->registry.has<SpatialData>(two)
+	 || !world->registry.has<Collidable>(two)) return false;
+	auto spatial1 = world->registry.get<SpatialData>(one);
+	auto spatial2 = world->registry.get<SpatialData>(two);
+	auto collide1 = world->registry.get<Collidable>(one);
+	auto collide2 = world->registry.get<Collidable>(two);
+
 	switch (collide1.type) {
 	case Collidable::Type::Circle: {
 		switch(collide2.type) {
 		case Collidable::Type::Circle: {
 			// TODO: 3D collisions
-			return (spatial1.position.dist(spatial2.position) < collide1.circle_radius + collide2.circle_radius;
+			return spatial1.position.dist(spatial2.position) < collide1.circle_radius + collide2.circle_radius;
 			break;
 		}
 		}
@@ -180,13 +181,13 @@ void CollisionSystem::receive(MovedEvent e) {
 		if (iter != spatial_hash.end()) {
 			for (const auto &entity : iter->second) {
 				if ((e.entity != entity) && collides(e.entity, entity)) {
-					events.emit<CollidedEvent>(e.entity, entity);
+					// events.emit<CollidedEvent>(e.entity, entity);
 				}
 			}
 		}
 	}
 }
 
-void CollisionSystem::update(entityx::EntityManager &es, entityx::EventManager &events, entityx::TimeDelta dt) {
+void CollisionSystem::update(TimeDelta dt) {
 	// fuck this nobody liked it anyway 
 }

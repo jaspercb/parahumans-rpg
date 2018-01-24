@@ -49,6 +49,7 @@ struct Renderable {
 		};
 	};
 };
+
 struct Collidable {
 	enum Type {
 		Circle

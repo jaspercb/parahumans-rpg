@@ -1,7 +1,5 @@
 #pragma once
 
-#include "entityx/entityx.h"
-
 struct ControlSignal {
 	enum Type {
 		Move,
@@ -18,12 +16,12 @@ struct ControlSignal {
 };
 
 struct MovedEvent {
-	MovedEvent(entityx::Entity, vec2f oldPos, vec2f newPos) : entity(entity), oldPos(oldPos), newPos(newPos) {}
-	entityx::Entity entity;
+	MovedEvent(Entity, vec2f oldPos, vec2f newPos) : entity(entity), oldPos(oldPos), newPos(newPos) {}
+	Entity entity;
 	vec2f oldPos, newPos;
 };
 
 struct CollidedEvent {
-	CollidedEvent(entityx::Entity one, entityx::Entity two) : one(one), two(two) {}
-	entityx::Entity one, two;
+	CollidedEvent(Entity one, Entity two) : one(one), two(two) {}
+	Entity one, two;
 };

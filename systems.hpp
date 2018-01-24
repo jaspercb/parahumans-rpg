@@ -1,16 +1,27 @@
 #pragma once
 
-#include "entityx/entityx.h"
+#include "entt/entt.hpp"
 #include "types.hpp"
 #include "events.hpp"
+#include "components.hpp"
 #include <map>
+#include <set>
 #include <utility>
 #include <list>
 
 class SDL_Renderer;
 
-struct MovementSystem : public entityx::System<MovementSystem> {
-	void update(entityx::EntityManager &es, entityx::EventManager &events, entityx::TimeDelta dt) override;
+struct World;
+
+struct System {
+public:
+	System() : world(nullptr) {};
+	virtual void update(TimeDelta dt) = 0;
+	World *world;
+};
+
+struct MovementSystem : public System {
+	void update(TimeDelta dt) override;
 };
 
 struct View {
@@ -25,26 +36,26 @@ private:
 	vec2f viewcenter;
 };
 
-struct RenderSystem : public entityx::System<RenderSystem> {
+struct RenderSystem : public System {
 public:
 	RenderSystem(SDL_Renderer* renderer) : _renderer(renderer), timeSinceStart(0.0) {};
-	void renderEntity(entityx::Entity entity);
-	void update(entityx::EntityManager &es, entityx::EventManager &events, entityx::TimeDelta dt) override;
+	void renderEntity(Entity entity);
+	void update(TimeDelta dt) override;
 private:
 	SDL_Renderer* _renderer;
 	View _view;
-	entityx::TimeDelta timeSinceStart;
+	TimeDelta timeSinceStart;
 };
 
-struct CollisionSystem : public entityx::System<CollisionSystem> {
+struct CollisionSystem : public System {
 public:
 	CollisionSystem(int gridwidth);
-	bool collides(entityx::Entity one, entityx::Entity two);
+	bool collides(Entity one, Entity two);
 	void receive(MovedEvent e);
-	void update(entityx::EntityManager &es, entityx::EventManager &events, entityx::TimeDelta dt) override;
+	void update(TimeDelta dt) override;
 private:
 	const int gridwidth;
-	std::map<vec2i, std::set<entityx::Entity>> spatial_hash;
+	std::map<vec2i, std::set<Entity>> spatial_hash;
 	const vec2i getGridCoords(vec2f pos) const {
 		return vec2i(std::floor(pos.x/gridwidth), std::floor(pos.y/gridwidth));
 	}
