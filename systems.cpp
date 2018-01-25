@@ -9,9 +9,9 @@ void MovementSystem::update(TimeDelta dt) {
 		auto oldpos = sdata.position;
 		sdata.position.x += sdata.velocity.x * dt;
 		sdata.position.y += sdata.velocity.y * dt;
-		//if (sdata.velocity.x && sdata.velocity.y) {
+		if (sdata.velocity.x && sdata.velocity.y) {
 			world->bus.publish<MovedEvent>(entity, oldpos, sdata.position);
-		//}
+		}
 	});
 };
 
@@ -105,6 +105,16 @@ void RenderSystem::renderEntity(Entity entity) {
 
 		}
 	}
+	// render HP bar if needed
+	if (!world->registry.has<Destructible>(entity)) return;
+	auto destructible = world->registry.get<Destructible>(entity);
+	static const vec2i HP_BAR_OFFSET = {0, -70};
+	static const vec2i HP_BAR_SIZE = {50, 10};
+	vec2i topleft = ipos + HP_BAR_OFFSET - HP_BAR_SIZE/2;
+	vec2i bottomright = ipos + HP_BAR_OFFSET + HP_BAR_SIZE/2;
+	boxColor(_renderer, topleft.x, topleft.y, bottomright.x, bottomright.y, SDL_ColortoUint32(SDL_Colors::RED));
+	bottomright.x -= HP_BAR_SIZE.x * (1.0 - float(destructible.HP)/destructible.HP.max);
+	boxColor(_renderer, topleft.x, topleft.y, bottomright.x, bottomright.y, SDL_ColortoUint32(SDL_Colors::GREEN));
 }
 
 void RenderSystem::update(TimeDelta dt) {
@@ -136,9 +146,7 @@ void RenderSystem::update(TimeDelta dt) {
 
 CollisionSystem::CollisionSystem(int gridwidth)
 	: gridwidth(gridwidth)
-{
-	// TODO: register as listener for ThingMoved events
-}
+{}
 
 bool CollisionSystem::collides(Entity one, Entity two) {
 	if (!world->registry.has<SpatialData>(one)
@@ -190,6 +198,15 @@ void CollisionSystem::receive(const MovedEvent &e) {
 	}
 }
 
-void CollisionSystem::update(TimeDelta dt) {
-	// fuck this nobody liked it anyway 
+DestructibleSystem::DestructibleSystem() {}
+
+void DestructibleSystem::receive(const DamagedEvent &e) {
+	// TODO: Pay attention to damage types, source
+	if (!world->registry.has<Destructible>(e.damaged)) return;
+	auto destructible = world->registry.get<Destructible>(e.damaged);
+	if (!destructible.indestructible) {
+		destructible.HP -= e.damage;
+	}
 }
+
+void DestructibleSystem::update(TimeDelta dt) {}

@@ -25,3 +25,11 @@ struct CollidedEvent {
 	CollidedEvent(Entity one, Entity two) : one(one), two(two) {}
 	Entity one, two;
 };
+
+struct DamagedEvent {
+	DamagedEvent(Entity source, Entity damaged, DamageType type, float damage)
+		: source(source), damaged(damaged), type(type), damage(damage) {}
+	Entity source, damaged;
+	DamageType type;
+	float damage;
+};

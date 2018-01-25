@@ -17,7 +17,7 @@ struct System {
 public:
 	System() : world(nullptr) {};
 	virtual void init() {};
-	virtual void update(TimeDelta dt) = 0;
+	virtual void update(TimeDelta dt) {};
 	World *world;
 };
 
@@ -53,11 +53,17 @@ public:
 	CollisionSystem(int gridwidth);
 	bool collides(Entity one, Entity two);
 	void receive(const MovedEvent &e);
-	void update(TimeDelta dt) override;
 private:
 	const int gridwidth;
 	std::map<vec2i, std::set<Entity>> spatial_hash;
 	const vec2i getGridCoords(vec2f pos) const {
 		return vec2i(std::floor(pos.x/gridwidth), std::floor(pos.y/gridwidth));
 	}
+};
+
+struct DestructibleSystem : public System {
+public:
+	DestructibleSystem();
+	void receive(const DamagedEvent &e);
+	void update(TimeDelta dt) override;
 };

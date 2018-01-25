@@ -61,3 +61,11 @@ struct Collidable {
 		};
 	};
 };
+
+struct Destructible {
+	Destructible(HPType maxHP, bool indestructible=false)
+		: HP(maxHP, 0, maxHP), indestructible(indestructible)
+		{}
+	BoundedQuantity<HPType> HP;
+	bool indestructible;
+};

@@ -2,6 +2,10 @@
 
 It is (will be) an isometric game of some sort.
 
+## High-priority features
+- Conditions (regen, damage over time, damage resistance)
+- Super basic abilities (bolt, aura, punch, teleport)
+
 ## Motivation
 
 I thought it'd be neat to make an isometric superhero game. The main technical challenge that interests me is random but novel power generation and control, but approximately 0 work has been done on that so far.
