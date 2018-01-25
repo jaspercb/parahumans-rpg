@@ -15,7 +15,8 @@
 class ClientApplication {
 public:
 	explicit ClientApplication(SDL_Window* window) :
-		window(window)
+		window(window),
+		running(true)
 	{
 		if (window) {
 			renderer = SDL_CreateRenderer(window, -1 /* no driver index */, SDL_WINDOW_OPENGL /* no flags */);
@@ -28,12 +29,14 @@ public:
 		world.addSystem(std::make_shared<RenderSystem>(renderer));
 		world.addSystem(std::make_shared<CollisionSystem>(100 /* gridwidth */));
 		world.addSystem(std::make_shared<DestructibleSystem>());
+		world.addSystem(std::make_shared<InputSystem>());
 
 		for (int i=0; i<1; i++) {
 			auto entity = world.registry.create();
 			world.registry.assign<SpatialData>(entity, vec2f(10*i, 10*i));
 			world.registry.assign<Renderable>(entity, Renderable::Type::Person);
 			world.registry.assign<Destructible>(entity, 50);
+			world.registry.assign<Controllable>(entity);
 			controlled = entity;
 		}
 		for (int i=0; i<10; i++) {
@@ -49,6 +52,14 @@ public:
 			}
 		}
 		lastFrameTimeMilliseconds = SDL_GetTicks();
+	}
+
+	void init(std::shared_ptr<ClientApplication> sharedptr) {
+		// To register a __, we need a shared pointer. We obviously can't have
+		// a shared pointer during initalization, and I'd rather not make this
+		// static. So here we are, passing a shared pointer to an instance back
+		// to the instance immediately after initialization. -_-
+		world.bus.reg(sharedptr);
 	}
 
 	void update() {
@@ -68,46 +79,16 @@ public:
 	void handleEvent(const SDL_Event& e) {}
 
 	void run() {
-		SDL_Event e;
-		bool quit = false;
-
-		const Uint8 *keys = SDL_GetKeyboardState(NULL);
-		while (!quit) {
-			while (SDL_PollEvent(&e)) {
-				if (e.type == SDL_QUIT) quit = true;
-			}
-			// Static key effects
-			if (world.registry.valid(controlled) && world.registry.has<SpatialData>(controlled)) {
-				SpatialData& sdata = world.registry.get<SpatialData>(controlled);
-				vec2f accel;
-				if (keys[SDL_SCANCODE_LEFT]) {
-					accel.x -= 1;
-					accel.y += 1;
-				}
-				if (keys[SDL_SCANCODE_RIGHT]) {
-					accel.x += 1;
-					accel.y -= 1;
-				}
-				if (keys[SDL_SCANCODE_UP]) {
-					accel.x -= 1;
-					accel.y -= 1;
-				}
-				if (keys[SDL_SCANCODE_DOWN]) {
-					accel.x += 1;
-					accel.y += 1;
-				}
-				accel.normalize();
-				accel *= 20;
-				sdata.velocity += accel;
-				if (sdata.velocity.x || sdata.velocity.y)
-					sdata.orientation = atan2f(sdata.velocity.y, sdata.velocity.x);
-				sdata.velocity *= 0.85;
-			}
+		while (running)
 			update();
-		}
+	}
+
+	void receive(const WindowExitEvent&) {
+		running = false;
 	}
 
 private:
+	bool running;
 	SDL_Window* window;
 	SDL_Renderer* renderer;
 	World world;
@@ -134,8 +115,9 @@ int main(int argc, char* args[]) {
 		return 1;
 	}
 
-	ClientApplication app(window);
-	app.run();
+	auto app = std::make_shared<ClientApplication>(window);
+	app->init(app);
+	app->run();
 	SDL_Quit();
 	return 0;
 }

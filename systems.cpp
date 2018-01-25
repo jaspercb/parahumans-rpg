@@ -210,3 +210,41 @@ void DestructibleSystem::receive(const DamagedEvent &e) {
 }
 
 void DestructibleSystem::update(TimeDelta dt) {}
+
+
+InputSystem::InputSystem() {}
+
+void InputSystem::update(TimeDelta dt) {
+	SDL_Event e;
+
+	const Uint8 *keys = SDL_GetKeyboardState(NULL);
+	while (SDL_PollEvent(&e)) {
+		if (e.type == SDL_QUIT)
+			world->bus.publish<WindowExitEvent>();
+	}
+	world->registry.view<SpatialData, Controllable>().each([dt, keys](auto entity, auto &sdata, auto &controllable) {
+		vec2f accel;
+		if (keys[SDL_SCANCODE_LEFT]) {
+			accel.x -= 1;
+			accel.y += 1;
+		}
+		if (keys[SDL_SCANCODE_RIGHT]) {
+			accel.x += 1;
+			accel.y -= 1;
+		}
+		if (keys[SDL_SCANCODE_UP]) {
+			accel.x -= 1;
+			accel.y -= 1;
+		}
+		if (keys[SDL_SCANCODE_DOWN]) {
+			accel.x += 1;
+			accel.y += 1;
+		}
+		accel.normalize();
+		accel *= 20;
+		sdata.velocity += accel;
+		if (sdata.velocity.x || sdata.velocity.y)
+			sdata.orientation = atan2f(sdata.velocity.y, sdata.velocity.x);
+		sdata.velocity *= 0.85;
+	});
+}

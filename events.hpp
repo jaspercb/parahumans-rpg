@@ -33,3 +33,7 @@ struct DamagedEvent {
 	DamageType type;
 	float damage;
 };
+
+struct WindowExitEvent {
+	WindowExitEvent() {}
+};

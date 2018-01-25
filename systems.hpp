@@ -67,3 +67,9 @@ public:
 	void receive(const DamagedEvent &e);
 	void update(TimeDelta dt) override;
 };
+
+struct InputSystem : public System {
+	InputSystem();
+	// void receive(const DamagedEvent &e);
+	void update(TimeDelta dt) override;
+};

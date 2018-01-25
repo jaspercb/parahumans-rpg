@@ -3,7 +3,7 @@
 
 struct World {
 	entt::Registry<Entity> registry;
-	entt::ManagedBus<MovedEvent, CollidedEvent> bus;
+	entt::ManagedBus<MovedEvent, CollidedEvent, DamagedEvent, WindowExitEvent> bus;
 	std::list<std::shared_ptr<System>> systems;
 
 	template<typename SystemType> void addSystem(std::shared_ptr<SystemType> system) {

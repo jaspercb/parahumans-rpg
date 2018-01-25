@@ -69,3 +69,7 @@ struct Destructible {
 	BoundedQuantity<HPType> HP;
 	bool indestructible;
 };
+
+struct Controllable {
+	Controllable() {}
+};
