@@ -26,14 +26,14 @@ public:
 		}
 
 		world.addSystem(std::make_shared<MovementSystem>());
-		world.addSystem(std::make_shared<RenderSystem>(renderer));
+		world.addSystem(std::make_shared<RenderSystem>(renderer, SCREEN_WIDTH, SCREEN_HEIGHT));
 		world.addSystem(std::make_shared<CollisionSystem>(100 /* gridwidth */));
 		world.addSystem(std::make_shared<DestructibleSystem>());
 		world.addSystem(std::make_shared<InputSystem>());
 
 		for (int i=0; i<1; i++) {
 			auto entity = world.registry.create();
-			world.registry.assign<SpatialData>(entity, vec2f(10*i, 10*i));
+			world.registry.assign<SpatialData>(entity, vec2f(0, 0));
 			world.registry.assign<Renderable>(entity, Renderable::Type::Person);
 			world.registry.assign<Destructible>(entity, 50);
 			world.registry.assign<Controllable>(entity);

@@ -29,7 +29,7 @@ void renderOvalOffset(SDL_Renderer* renderer, View* view, vec2i pos, vec2i offse
 void RenderSystem::renderEntity(Entity entity) {
 	auto sdata = world->registry.get<SpatialData>(entity);
 	auto renderable = world->registry.get<Renderable>(entity);
-	vec2f fpos = _view.viewCoordFromGlobal(sdata.position);
+	vec2f fpos = renderCoordFromGlobal(sdata.position);
 	vec2i ipos = vec2i(fpos.x, fpos.y);
 	ipos.y -= sdata.z;
 	switch(renderable.type) {
@@ -49,7 +49,7 @@ void RenderSystem::renderEntity(Entity entity) {
 			float walkspeed = 8;
 			orientation.rotate(sdata.orientation);
 			float phase = sdata.timeMoving;
-			float depthy = _view.viewCoordFromGlobal(orientation).y;
+			float depthy = renderCoordFromGlobal(orientation).y;
 			if (depthy > 0) {
 				renderOvalOffset(_renderer, &_view, ipos, {0, -12}, sdata.orientation, 18, 5, 5, renderable.color); // arms
 				renderOvalOffset(_renderer, &_view, ipos, {6*sin(phase*walkspeed), -6}, sdata.orientation, 0, 4, 4, renderable.color); // legs
@@ -74,9 +74,9 @@ void RenderSystem::renderEntity(Entity entity) {
 			break; // TOO SLOW
 			float width = 50;
 			vec2f xstep(-width, 0);
-			xstep = _view.viewCoordFromGlobal(xstep);
+			xstep = renderCoordFromGlobal(xstep);
 			vec2f ystep(0, -width);
-			ystep = _view.viewCoordFromGlobal(ystep);
+			ystep = renderCoordFromGlobal(ystep);
 			Sint16 vx[4];
 			Sint16 vy[4];
 			vx[0] = ipos.x;

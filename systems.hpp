@@ -39,13 +39,23 @@ private:
 
 struct RenderSystem : public System {
 public:
-	RenderSystem(SDL_Renderer* renderer) : _renderer(renderer), timeSinceStart(0.0) {};
+	RenderSystem(SDL_Renderer* renderer, int screenwidth, int screenheight)
+		: _renderer(renderer),
+		  _screenwidth(screenwidth),
+		  _screenheight(screenheight),
+		  timeSinceStart(0.0) {};
 	void renderEntity(Entity entity);
+
+	template <typename T> vec2<T> inline renderCoordFromGlobal(vec2<T> globalpos) const {
+		return _view.viewCoordFromGlobal(globalpos) + vec2<T>(_screenwidth, _screenheight)/2;
+	}
+
 	void update(TimeDelta dt) override;
 private:
 	SDL_Renderer* _renderer;
 	View _view;
 	TimeDelta timeSinceStart;
+	int _screenwidth, _screenheight;
 };
 
 struct CollisionSystem : public System {
