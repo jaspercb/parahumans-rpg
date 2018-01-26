@@ -116,6 +116,11 @@ public:
 	}
 };
 
+
+template<typename T> vec2<T> operator*(const double s, const vec2<T> vec) {
+	return vec2(vec.x * s, vec.y * s);
+}
+
 template<typename T> class BoundedQuantity {
 public:
 	BoundedQuantity(T val, T min, T max)

@@ -19,11 +19,12 @@ void MovementSystem::update(TimeDelta dt) {
 	});
 };
 
-void renderOvalOffset(SDL_Renderer* renderer, View* view, vec2i pos, vec2i offset, float angle, int height, int rx, int ry, SDL_Color color) {
+void renderOvalOffset(SDL_Renderer* renderer, View* view, vec2i pos, vec2i offset, float angle, float height, float rx, float ry, SDL_Color color) {
+	const float scale = view->scale;
 	offset.rotate(angle);
 	vec2i screenpos = pos + view->viewCoordFromGlobal(offset);
-	filledEllipseColor(renderer, screenpos.x, screenpos.y - height, rx, ry, SDL_ColortoUint32(color));
-	ellipseColor(renderer, screenpos.x, screenpos.y - height, rx, ry, SDL_ColortoUint32(SDL_Colors::BLACK));
+	filledEllipseColor(renderer, screenpos.x, screenpos.y - scale*height, int(rx*scale), int(ry*scale), SDL_ColortoUint32(color));
+	ellipseColor(renderer, screenpos.x, screenpos.y - scale*height, int(rx*scale), int(ry*scale), SDL_ColortoUint32(SDL_Colors::BLACK));
 }
 
 void RenderSystem::renderEntity(Entity entity) {
@@ -34,7 +35,7 @@ void RenderSystem::renderEntity(Entity entity) {
 	ipos.y -= sdata.z;
 	switch(renderable.type) {
 		case Renderable::Type::Circle: {
-			filledCircleColor(_renderer, ipos.x, ipos.y, renderable.circle_radius, SDL_ColortoUint32(renderable.color));
+			filledCircleColor(_renderer, ipos.x, ipos.y, _view.scale * renderable.circle_radius, SDL_ColortoUint32(renderable.color));
 			break;
 		}
 		case Renderable::Type::Line: {
@@ -72,6 +73,7 @@ void RenderSystem::renderEntity(Entity entity) {
 		case Renderable::Type::Cube:
 		{
 			break; // TOO SLOW
+			// TODO: add scale dependency
 			float width = 50;
 			vec2f xstep(-width, 0);
 			xstep = renderCoordFromGlobal(xstep);
@@ -115,8 +117,8 @@ void RenderSystem::renderEntity(Entity entity) {
 	auto destructible = world->registry.get<Destructible>(entity);
 	static const vec2i HP_BAR_OFFSET = {0, -70};
 	static const vec2i HP_BAR_SIZE = {50, 10};
-	vec2i topleft = ipos + HP_BAR_OFFSET - HP_BAR_SIZE/2;
-	vec2i bottomright = ipos + HP_BAR_OFFSET + HP_BAR_SIZE/2;
+	vec2i topleft = ipos + HP_BAR_OFFSET * _view.scale - HP_BAR_SIZE/2;
+	vec2i bottomright = ipos + HP_BAR_OFFSET * _view.scale + HP_BAR_SIZE/2;
 	boxColor(_renderer, topleft.x, topleft.y, bottomright.x, bottomright.y, SDL_ColortoUint32(SDL_Colors::RED));
 	bottomright.x -= HP_BAR_SIZE.x * (1.0 - float(destructible.HP)/destructible.HP.max);
 	boxColor(_renderer, topleft.x, topleft.y, bottomright.x, bottomright.y, SDL_ColortoUint32(SDL_Colors::GREEN));

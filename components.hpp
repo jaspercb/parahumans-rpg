@@ -49,11 +49,11 @@ struct Renderable {
 		// Line
 		struct {
 			float line_thickness;
-			int line_displacement_x;
-			int line_displacement_y;
+			float line_displacement_x;
+			float line_displacement_y;
 		};
 		struct {
-			int cube_x, cube_y, cube_z;
+			float cube_x, cube_y, cube_z;
 		};
 	};
 };

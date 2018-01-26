@@ -28,12 +28,12 @@ struct MovementSystem : public System {
 struct View {
 public:
 	template <typename T> vec2<T> inline viewCoordFromGlobal(vec2<T> globalpos) const {
-		auto x = (globalpos.x - viewcenter.x);
-		auto y = (globalpos.y - viewcenter.y);
+		auto x = (globalpos.x - viewcenter.x) * scale;
+		auto y = (globalpos.y - viewcenter.y) * scale;
 		return vec2<T>((x - y),
 		             (x + y)/1.73);
 	}
-private:
+	float scale; // larger is bigger
 	vec2f viewcenter;
 };
 
@@ -43,7 +43,9 @@ public:
 		: _renderer(renderer),
 		  _screenwidth(screenwidth),
 		  _screenheight(screenheight),
-		  timeSinceStart(0.0) {};
+		  timeSinceStart(0.0) {
+		  	_view.scale = 1;
+		  };
 	void renderEntity(Entity entity);
 
 	template <typename T> vec2<T> inline renderCoordFromGlobal(vec2<T> globalpos) const {
