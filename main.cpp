@@ -55,10 +55,11 @@ public:
 	}
 
 	void init(std::shared_ptr<ClientApplication> sharedptr) {
-		// To register a __, we need a shared pointer. We obviously can't have
-		// a shared pointer during initalization, and I'd rather not make this
-		// static. So here we are, passing a shared pointer to an instance back
-		// to the instance immediately after initialization. -_-
+		// To register an event handler, we need a shared pointer. We obviously
+		// can't have a shared pointer to an object during the initalization of
+		// that object, and I'd rather not make this static. So here we are,
+		// passing a shared pointer to an instance back to the instance
+		// immediately after initialization. -_-
 		world.bus.reg(sharedptr);
 	}
 

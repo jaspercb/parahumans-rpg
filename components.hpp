@@ -1,18 +1,26 @@
 #pragma once
 
 #include "sdlTools.hpp"
+#include "types.hpp"
 
 struct SpatialData {
 	SpatialData(vec2f position={0, 0}, vec2f velocity={0, 0}, float z=0, float orientation=0) :
 		position(position),
 		velocity(velocity),
 		z(z),
-		orientation(orientation) {};
+		orientation(orientation),
+		timeMoving(0.0) {};
 
-	vec2f orientationToVec() { return vec2f(cos(orientation), sin(orientation)); };
+	vec2f orientationToVec() const {
+		return vec2f(cos(orientation), sin(orientation));
+	};
+	bool isMoving() const {
+		return velocity.x || velocity.y;
+	}
 
 	vec2f position, velocity;
 	float z, orientation;
+	TimeDelta timeMoving;
 };
 
 struct Renderable {

@@ -9,8 +9,12 @@ void MovementSystem::update(TimeDelta dt) {
 		auto oldpos = sdata.position;
 		sdata.position.x += sdata.velocity.x * dt;
 		sdata.position.y += sdata.velocity.y * dt;
-		if (sdata.velocity.x && sdata.velocity.y) {
+		if (sdata.isMoving()) {
+			sdata.timeMoving += dt;
 			world->bus.publish<MovedEvent>(entity, oldpos, sdata.position);
+		}
+		else {
+			sdata.timeMoving = 0;
 		}
 	});
 };
@@ -44,23 +48,24 @@ void RenderSystem::renderEntity(Entity entity) {
 			vec2f orientation(0, 1);
 			float walkspeed = 8;
 			orientation.rotate(sdata.orientation);
+			float phase = sdata.timeMoving;
 			float depthy = _view.viewCoordFromGlobal(orientation).y;
 			if (depthy > 0) {
 				renderOvalOffset(_renderer, &_view, ipos, {0, -12}, sdata.orientation, 18, 5, 5, renderable.color); // arms
-				renderOvalOffset(_renderer, &_view, ipos, {6*cos(timeSinceStart*walkspeed), -6}, sdata.orientation, 0, 4, 4, renderable.color); // legs
+				renderOvalOffset(_renderer, &_view, ipos, {6*sin(phase*walkspeed), -6}, sdata.orientation, 0, 4, 4, renderable.color); // legs
 			} else{
 				renderOvalOffset(_renderer, &_view, ipos, {0,  12}, sdata.orientation, 18, 5, 5, renderable.color);
-				renderOvalOffset(_renderer, &_view, ipos, {-6*cos(timeSinceStart*walkspeed), 6}, sdata.orientation, 0, 4, 4, renderable.color);
+				renderOvalOffset(_renderer, &_view, ipos, {-6*sin(phase*walkspeed), 6}, sdata.orientation, 0, 4, 4, renderable.color);
 			}
 			// head, body
 			renderOvalOffset(_renderer, &_view, ipos, {0, 0}, sdata.orientation, 16, 10, 15, renderable.color); // body
 			renderOvalOffset(_renderer, &_view, ipos, {0, 0}, sdata.orientation, 43, 15, 15, renderable.color); // head
 			if (depthy <= 0) {
 				renderOvalOffset(_renderer, &_view, ipos, {0, -12}, sdata.orientation, 18, 5, 5, renderable.color); // arms
-				renderOvalOffset(_renderer, &_view, ipos, {6*cos(timeSinceStart*walkspeed), -6}, sdata.orientation, 0, 4, 4, renderable.color); // legs
+				renderOvalOffset(_renderer, &_view, ipos, {6*sin(phase*walkspeed), -6}, sdata.orientation, 0, 4, 4, renderable.color); // legs
 			} else{
 				renderOvalOffset(_renderer, &_view, ipos, {0,  12}, sdata.orientation, 18, 5, 5, renderable.color);
-				renderOvalOffset(_renderer, &_view, ipos, {-6*cos(timeSinceStart*walkspeed), 6}, sdata.orientation, 0, 4, 4, renderable.color);
+				renderOvalOffset(_renderer, &_view, ipos, {-6*sin(phase*walkspeed), 6}, sdata.orientation, 0, 4, 4, renderable.color);
 			}
 			break;
 		}
@@ -214,6 +219,8 @@ void DestructibleSystem::update(TimeDelta dt) {}
 
 InputSystem::InputSystem() {}
 
+void InputSystem::receive(const SDL_Event& e) {}
+
 void InputSystem::update(TimeDelta dt) {
 	SDL_Event e;
 
@@ -243,8 +250,12 @@ void InputSystem::update(TimeDelta dt) {
 		accel.normalize();
 		accel *= 20;
 		sdata.velocity += accel;
-		if (sdata.velocity.x || sdata.velocity.y)
+		if (sdata.velocity.x || sdata.velocity.y) {
 			sdata.orientation = atan2f(sdata.velocity.y, sdata.velocity.x);
+		}
 		sdata.velocity *= 0.85;
+		if (!accel.x && !accel.y && sdata.velocity.length() < 1) {
+			sdata.velocity *= 0;
+		}
 	});
 }

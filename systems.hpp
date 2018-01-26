@@ -70,6 +70,6 @@ public:
 
 struct InputSystem : public System {
 	InputSystem();
-	// void receive(const DamagedEvent &e);
+	void receive(const SDL_Event& e);
 	void update(TimeDelta dt) override;
 };
