@@ -146,7 +146,7 @@ public:
 		value = std::clamp(other, min, max);
 		return *this;
 	}
-	operator T() {
+	operator T() const {
 		return value;
 	}
 	T value, min, max;
@@ -174,7 +174,8 @@ struct Condition {
 		BLEED,
 		POISON,
 		STUN,
-		MOD_SPEED
+		MOD_SPEED,
+		MOD_ACCEL
 	};
 
 	Priority priority;
@@ -192,6 +193,7 @@ struct Condition {
 			case Type::POISON:
 			return false;
 			case Type::MOD_SPEED:
+			case Type::MOD_ACCEL:
 			return true;
 		}
 	}

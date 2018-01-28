@@ -30,8 +30,8 @@ void renderOvalOffset(SDL_Renderer* renderer, View* view, vec2i pos, vec2i offse
 }
 
 void RenderSystem::renderEntity(Entity entity) {
-	auto sdata = world->registry.get<SpatialData>(entity);
-	auto renderable = world->registry.get<Renderable>(entity);
+	const auto &sdata = world->registry.get<SpatialData>(entity);
+	const auto &renderable = world->registry.get<Renderable>(entity);
 	vec2f fpos = renderCoordFromGlobal(sdata.position);
 	vec2i ipos = vec2i(fpos.x, fpos.y);
 	ipos.y -= sdata.z;
@@ -48,8 +48,9 @@ void RenderSystem::renderEntity(Entity entity) {
 			break;
 		}
 		case Renderable::Type::Person: {
+			const auto& stats = world->registry.get<Stats>(entity);
 			vec2f orientation(0, 1);
-			float walkspeed = 8;
+			float walkspeed = stats.speed() * 0.065;
 			orientation.rotate(sdata.orientation);
 			float phase = sdata.timeMoving;
 			float depthy = renderCoordFromGlobal(orientation).y;
@@ -116,7 +117,7 @@ void RenderSystem::renderEntity(Entity entity) {
 	}
 	// render HP bar if needed
 	if (!world->registry.has<Destructible>(entity)) return;
-	auto destructible = world->registry.get<Destructible>(entity);
+	const auto &destructible = world->registry.get<Destructible>(entity);
 	static const vec2i HP_BAR_OFFSET = {0, -70};
 	static const vec2i HP_BAR_SIZE = {50, 10};
 	vec2i topleft = ipos + HP_BAR_OFFSET * _view.scale - HP_BAR_SIZE/2;
@@ -212,7 +213,7 @@ DestructibleSystem::DestructibleSystem() {}
 void DestructibleSystem::receive(const DamagedEvent &e) {
 	// TODO: Pay attention to damage types, source
 	if (!world->registry.has<Destructible>(e.damaged)) return;
-	auto destructible = world->registry.get<Destructible>(e.damaged);
+	auto &destructible = world->registry.get<Destructible>(e.damaged);
 	if (!destructible.indestructible) {
 		destructible.HP -= e.damage;
 	}
@@ -224,10 +225,12 @@ InputSystem::InputSystem() {}
 
 void InputSystem::receive(const SDL_Event& e) {
 	if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_q) {
-		Condition speedup = {Condition::Priority::Adder, Condition::Type::MOD_SPEED, 1000, 2};
+		Condition speedup = {Condition::Priority::Multiplier, Condition::Type::MOD_SPEED, 2, 1 /* seconds */};
+		Condition accelup = {Condition::Priority::Multiplier, Condition::Type::MOD_ACCEL, 2, 1};
 		Condition burn = {Condition::Priority::None, Condition::Type::BURN, 10, 200000000};
-		world->registry.view<Conditions>().each([this, speedup](auto entity, auto &conditions) {
+		world->registry.view<Conditions, Stats>().each([this, speedup, accelup](auto entity, auto &conditions, auto &stats) {
 			world->bus.publish<ConditionEvent>(speedup, entity, entity);
+			world->bus.publish<ConditionEvent>(accelup, entity, entity);
 		});
 	}
 }
@@ -274,8 +277,8 @@ void InputSystem::update(TimeDelta dt) {
 }
 
 void ConditionSystem::receive(const ConditionEvent& e) {
-	auto stats = world->registry.get<Stats>(e.receiver);
-	auto conditions = world->registry.get<Conditions>(e.receiver);
+	auto &stats = world->registry.get<Stats>(e.receiver);
+	auto &conditions = world->registry.get<Conditions>(e.receiver);
 	conditions.list.push_front(e.condition);
 	stats.dirty = true;
 };
@@ -284,14 +287,14 @@ void ConditionSystem::update(TimeDelta dt) {
 	world->registry.view<Conditions, Stats>().each([dt, this](auto entity, auto &conditions, auto &stats) {
 		for (auto condition = conditions.list.begin(); condition != conditions.list.end(); condition++) {
 			tickCondition(entity, *condition, dt);
-			//if (condition->isExpired()) {
+			if (condition->isExpired()) {
 				condition = conditions.list.erase(condition);
 				stats.dirty = true;
-			//}
+			}
 		}
-		// if (stats.dirty) {
+		if (stats.dirty) {
 			recalculateStats(stats, conditions);
-		//}
+		}
 	});
 }
 
@@ -312,7 +315,8 @@ void ConditionSystem::recalculateStats(Stats &stats, Conditions &conditions) {
 	for (const auto &condition : conditions.list) {
 		float* var = nullptr;
 		switch (condition.type) {
-			case Condition::Type::MOD_SPEED: var = &stats.stats.speed;
+			case Condition::Type::MOD_SPEED: var = &stats.stats.speed; break;
+			case Condition::Type::MOD_ACCEL: var = &stats.stats.accel; break;
 		}
 		switch (condition.priority) {
 			case Condition::Priority::Adder: *var += condition.strength; break;
