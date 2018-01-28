@@ -30,6 +30,7 @@ public:
 		world.addSystem(std::make_shared<CollisionSystem>(100 /* gridwidth */));
 		world.addSystem(std::make_shared<DestructibleSystem>());
 		world.addSystem(std::make_shared<InputSystem>());
+		world.addSystem(std::make_shared<ConditionSystem>());
 
 		for (int i=0; i<1; i++) {
 			auto entity = world.registry.create();
@@ -37,6 +38,8 @@ public:
 			world.registry.assign<Renderable>(entity, Renderable::Type::Person);
 			world.registry.assign<Destructible>(entity, 50);
 			world.registry.assign<Controllable>(entity);
+			world.registry.assign<Conditions>(entity);
+			world.registry.assign<Stats>(entity, 133 /*movespeed*/, 40 /*accel*/);
 			controlled = entity;
 		}
 		for (int i=0; i<10; i++) {

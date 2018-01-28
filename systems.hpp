@@ -85,3 +85,13 @@ struct InputSystem : public System {
 	void receive(const SDL_Event& e);
 	void update(TimeDelta dt) override;
 };
+
+class ConditionSystem : public System {
+public:
+	ConditionSystem() {};
+	void receive(const ConditionEvent& e);
+	void update(TimeDelta dt) override;
+private:
+	void tickCondition(Entity entity, Condition& condition, TimeDelta dt);
+	static void recalculateStats(Stats &stats, Conditions &conditions);
+};

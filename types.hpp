@@ -4,6 +4,10 @@
 #include <cstdint>
 #include <algorithm>
 
+typedef float TimeDelta;
+typedef float HPType;
+typedef std::uint32_t Entity;
+
 template <class T>
 class vec2 {
 public:
@@ -121,6 +125,10 @@ template<typename T> vec2<T> operator*(const double s, const vec2<T> vec) {
 	return vec2(vec.x * s, vec.y * s);
 }
 
+typedef vec2<int> vec2i;
+typedef vec2<float> vec2f;
+typedef vec2<double> vec2d;
+
 template<typename T> class BoundedQuantity {
 public:
 	BoundedQuantity(T val, T min, T max)
@@ -154,9 +162,38 @@ enum DamageType {
 	Toxin
 };
 
-typedef vec2<int> vec2i;
-typedef vec2<float> vec2f;
-typedef vec2<double> vec2d;
-typedef float TimeDelta;
-typedef float HPType;
-typedef std::uint32_t Entity;
+struct Condition {
+	enum Priority {
+		Adder      = 0,
+		Multiplier = 1,
+		None       = 2
+	};
+	enum Type {
+		BURN,
+		FREEZE,
+		BLEED,
+		POISON,
+		STUN,
+		MOD_SPEED
+	};
+
+	Priority priority;
+	Type type;
+	float strength;
+	TimeDelta timeLeft;
+	// Contagious?
+
+	bool isExpired() const {return timeLeft < 0;}
+	bool isBeneficial() const {
+		switch(type) {
+			case Type::BURN:
+			case Type::FREEZE:
+			case Type::BLEED:
+			case Type::POISON:
+			return false;
+			case Type::MOD_SPEED:
+			return true;
+		}
+	}
+	bool operator<(const Condition& other) const {return priority < other.priority;}
+};

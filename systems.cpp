@@ -2,6 +2,8 @@
 #include "World.hpp"
 #include "sdlTools.hpp"
 
+#include <unistd.h>
+
 #include <map>
 
 void MovementSystem::update(TimeDelta dt) {
@@ -218,10 +220,17 @@ void DestructibleSystem::receive(const DamagedEvent &e) {
 
 void DestructibleSystem::update(TimeDelta dt) {}
 
-
 InputSystem::InputSystem() {}
 
-void InputSystem::receive(const SDL_Event& e) {}
+void InputSystem::receive(const SDL_Event& e) {
+	if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_q) {
+		Condition speedup = {Condition::Priority::Adder, Condition::Type::MOD_SPEED, 1000, 2};
+		Condition burn = {Condition::Priority::None, Condition::Type::BURN, 10, 200000000};
+		world->registry.view<Conditions>().each([this, speedup](auto entity, auto &conditions) {
+			world->bus.publish<ConditionEvent>(speedup, entity, entity);
+		});
+	}
+}
 
 void InputSystem::update(TimeDelta dt) {
 	SDL_Event e;
@@ -230,8 +239,10 @@ void InputSystem::update(TimeDelta dt) {
 	while (SDL_PollEvent(&e)) {
 		if (e.type == SDL_QUIT)
 			world->bus.publish<WindowExitEvent>();
+		else
+			world->bus.publish<SDL_Event>(e);
 	}
-	world->registry.view<SpatialData, Controllable>().each([dt, keys](auto entity, auto &sdata, auto &controllable) {
+	world->registry.view<SpatialData, Controllable, Stats>().each([dt, keys](auto entity, auto &sdata, auto &controllable, auto &stats) {
 		vec2f accel;
 		if (keys[SDL_SCANCODE_LEFT]) {
 			accel.x -= 1;
@@ -250,14 +261,63 @@ void InputSystem::update(TimeDelta dt) {
 			accel.y += 1;
 		}
 		accel.normalize();
-		accel *= 20;
+		accel *= stats.accel();
 		sdata.velocity += accel;
 		if (sdata.velocity.x || sdata.velocity.y) {
 			sdata.orientation = atan2f(sdata.velocity.y, sdata.velocity.x);
 		}
-		sdata.velocity *= 0.85;
-		if (!accel.x && !accel.y && sdata.velocity.length() < 1) {
+		sdata.velocity *= stats.speed() / (stats.accel() + stats.speed());
+		if (!accel.x && !accel.y && sdata.velocity.length() < 1 /*epsilon value*/ ) {
 			sdata.velocity *= 0;
 		}
 	});
+}
+
+void ConditionSystem::receive(const ConditionEvent& e) {
+	auto stats = world->registry.get<Stats>(e.receiver);
+	auto conditions = world->registry.get<Conditions>(e.receiver);
+	conditions.list.push_front(e.condition);
+	stats.dirty = true;
+};
+
+void ConditionSystem::update(TimeDelta dt) {
+	world->registry.view<Conditions, Stats>().each([dt, this](auto entity, auto &conditions, auto &stats) {
+		for (auto condition = conditions.list.begin(); condition != conditions.list.end(); condition++) {
+			tickCondition(entity, *condition, dt);
+			//if (condition->isExpired()) {
+				condition = conditions.list.erase(condition);
+				stats.dirty = true;
+			//}
+		}
+		// if (stats.dirty) {
+			recalculateStats(stats, conditions);
+		//}
+	});
+}
+
+void ConditionSystem::tickCondition(Entity entity, Condition& condition, TimeDelta dt) {
+	switch (condition.type) {
+		case Condition::Type::BURN: // damage
+		case Condition::Type::BLEED: // damage
+		case Condition::Type::POISON: // damage
+		world->bus.publish<DamagedEvent>(entity, entity, DamageType::Puncture, condition.strength * dt);
+		break;
+	}
+	condition.timeLeft -= dt;
+}
+
+void ConditionSystem::recalculateStats(Stats &stats, Conditions &conditions) {
+	memcpy(&stats.stats, &stats.basestats, sizeof(stats.stats));
+	conditions.list.sort();
+	for (const auto &condition : conditions.list) {
+		float* var = nullptr;
+		switch (condition.type) {
+			case Condition::Type::MOD_SPEED: var = &stats.stats.speed;
+		}
+		switch (condition.priority) {
+			case Condition::Priority::Adder: *var += condition.strength; break;
+			case Condition::Priority::Multiplier: *var *= condition.strength; break;
+		}
+	}
+	stats.dirty = false;
 }

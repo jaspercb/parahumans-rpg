@@ -37,3 +37,10 @@ struct DamagedEvent {
 struct WindowExitEvent {
 	WindowExitEvent() {}
 };
+
+struct ConditionEvent {
+	ConditionEvent(Condition condition, Entity source, Entity receiver)
+		: condition(condition), source(source), receiver(receiver) {}
+	Condition condition;
+	Entity source, receiver;
+};

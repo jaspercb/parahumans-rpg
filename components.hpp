@@ -58,6 +58,32 @@ struct Renderable {
 	};
 };
 
+class ConditionSystem;
+
+class Stats {
+friend ConditionSystem;
+private:
+	struct {
+		// float brawn, athletics, dexterity, wits, social, knowledge, guts;
+		float speed, accel;
+	} basestats, stats;
+	bool dirty;
+public:
+	Stats(float speed, float accel) {
+		for (auto i : {&basestats, &stats}) {
+			i->speed = speed;
+			i->accel = accel;
+		}
+		dirty = false;
+	}
+	float speed() const { return stats.speed; }
+	float accel() const { return stats.accel; }
+};
+
+struct Conditions {
+	std::list<Condition> list;
+};
+
 struct Collidable {
 	enum Type {
 		Circle
