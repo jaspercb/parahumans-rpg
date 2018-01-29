@@ -194,7 +194,7 @@ struct Condition {
 			return false;
 			case Type::MOD_SPEED:
 			case Type::MOD_ACCEL:
-			return true;
+			return (priority == Priority::Multiplier) ? strength > 1 : strength > 0;
 		}
 	}
 	bool operator<(const Condition& other) const {return priority < other.priority;}
