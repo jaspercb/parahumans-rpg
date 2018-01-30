@@ -170,10 +170,10 @@ struct Condition {
 	};
 	enum Type {
 		BURN,
-		FREEZE,
+		// FREEZE,
 		BLEED,
 		POISON,
-		STUN,
+		// STUN,
 		MOD_SPEED,
 		MOD_ACCEL
 	};
@@ -188,7 +188,7 @@ struct Condition {
 	bool isBeneficial() const {
 		switch(type) {
 			case Type::BURN:
-			case Type::FREEZE:
+			// case Type::FREEZE:
 			case Type::BLEED:
 			case Type::POISON:
 			return false;

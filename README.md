@@ -3,7 +3,9 @@
 It is (will be) an isometric game of some sort.
 
 ## High-priority features
-- Conditions (regen, damage over time, damage resistance)
+- More stats + conditions to modify them (subjective time, size, damage resistance)
+- More conditions (regen)
+- Upgrade collision system to support rectangles and rays
 - Super basic abilities (bolt, aura, punch, teleport)
 
 ## Motivation
@@ -18,5 +20,3 @@ A version of ENTT (a header-only entity component system framework) is included 
 
 Everything under entt/ is licensed under the MIT license by Michele Caini.
 All the other code is released under the MIT license by Jasper Chapman-Black.
-
-A short snippet describing the license (MIT, Apache, etc.)
