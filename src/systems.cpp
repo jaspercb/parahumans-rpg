@@ -167,7 +167,13 @@ bool CollisionSystem::collides(Entity one, Entity two) {
 	auto spatial2 = world->registry.get<SpatialData>(two);
 	auto collide1 = world->registry.get<Collidable>(one);
 	auto collide2 = world->registry.get<Collidable>(two);
+	return _collides(spatial1, collide1, spatial2, collide2);
+}
 
+bool CollisionSystem::_collides(const SpatialData &spatial1,
+                                const Collidable  &collide1,
+                                const SpatialData &spatial2,
+                                const Collidable  &collide2) {
 	switch (collide1.type) {
 	case Collidable::Type::Circle:
 		switch(collide2.type) {
@@ -199,7 +205,11 @@ void CollisionSystem::receive(const MovedEvent &e) {
 		if (iter != spatial_hash.end()) {
 			for (const auto &entity : iter->second) {
 				if ((e.entity != entity) && collides(e.entity, entity)) {
-					world->bus.publish<CollidedEvent>(e.entity, entity);
+					auto collide1 = world->registry.get<Collidable>(e.entity);
+					auto collide2 = world->registry.get<Collidable>(entity);
+					if (collide1.canCollide(entity) && collide2.canCollide(e.entity)) {
+						world->bus.publish<CollidedEvent>(e.entity, entity);
+					}
 				}
 			}
 		}

@@ -71,6 +71,8 @@ private:
 	const vec2i getGridCoords(vec2f pos) const {
 		return vec2i(std::floor(pos.x/gridwidth), std::floor(pos.y/gridwidth));
 	}
+	static bool _collides(const SpatialData &spatial1, const Collidable &collide1,
+                          const SpatialData &spatial2, const Collidable &collide2);
 };
 
 struct DestructibleSystem : public System {

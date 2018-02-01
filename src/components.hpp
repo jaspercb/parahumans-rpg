@@ -1,5 +1,7 @@
 #pragma once
 
+#include <unordered_set>
+
 #include "sdlTools.hpp"
 #include "types.hpp"
 
@@ -94,6 +96,11 @@ struct Collidable {
 			float circle_radius;
 		};
 	};
+	std::unordered_set<Entity> ignored;
+
+	bool canCollide(Entity other) const {
+		return ignored.find(other) != ignored.end();
+	}
 };
 
 struct Destructible {
