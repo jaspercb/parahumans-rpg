@@ -1,21 +1,32 @@
-#OBJS specifies which files to compile as part of the project
-OBJS = *.cpp gfx/*.c
+CC := g++-7
+# CC = clang --analyze
 
-#COMPILER_FLAGS specifies the additional compilation options we're using
-# -w suppresses all warnings
-COMPILER_FLAGS = -Wall -O1 -g -std=c++17
+SRCDIR := src
+BUILDDIR := build
+TARGET := bin/client
 
-#LINKER_FLAGS specifies the libraries we're linking against
-ifeq ($(OS),Windows_NT)
-LINKER_FLAGS = -LC:\MinGW\lib -w -Wl,-subsystem,windows -lmingw32 -lSDL2main -lSDL2 -lm -ldinput8 -ldxguid -ldxerr8 -luser32 -lgdi32 -lwinmm -limm32 -lole32 -loleaut32 -lshell32 -lversion -luuid
-CC = g++
-OBJ_NAME = client.exe
-else
-LINKER_FLAGS = -lSDL2main -lSDL2 -lm
-CC = g++-7
-OBJ_NAME = client
-endif
+ccred=$(shell echo "\033[0;31m")
+ccbold=$(shell echo "\033[1m")
+ccend=$(shell echo "\033[0m")
 
-#This is the target that compiles our executable
-all : $(OBJS)
-	$(CC) $(OBJS) $(COMPILER_FLAGS) $(LINKER_FLAGS) -o $(OBJ_NAME)
+SRCEXT := cpp
+SOURCES := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
+OBJECTS := $(patsubst $(SRCDIR)/%, $(BUILDDIR)/%, $(SOURCES:.$(SRCEXT)=.o))
+CFLAGS := -std=c++17 -g -O1 -Wall
+LIB := -lSDL2
+INC := -I include -I lib
+
+$(TARGET): $(OBJECTS)
+	@echo "    Linking... $(ccbold)$(TARGET)$(ccend)"; $(CC) $^ -o $(TARGET) $(LIB);
+
+$(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
+	@mkdir -p $(BUILDDIR)
+	@echo "    Compiling  $(ccbold)$<$(ccend)"; $(CC) $(CFLAGS) $(INC) -c -o $@ $<;
+
+clean:
+	@echo " Cleaning..."; 
+	@echo " $(RM) -r $(BUILDDIR) $(TARGET)"; $(RM) -r $(BUILDDIR) $(TARGET)
+
+# Tests
+tester:
+	$(CC) $(CFLAGS) test/tester.cpp $(INC) $(LIB) -o bin/tester
