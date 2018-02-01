@@ -15,8 +15,8 @@
 class ClientApplication {
 public:
 	explicit ClientApplication(SDL_Window* window) :
-		window(window),
-		running(true)
+		running(true),
+		window(window)
 	{
 		if (window) {
 			renderer = SDL_CreateRenderer(window, -1 /* no driver index */, SDL_WINDOW_OPENGL /* no flags */);

@@ -16,7 +16,7 @@ struct ControlSignal {
 };
 
 struct MovedEvent {
-	MovedEvent(Entity, vec2f oldPos, vec2f newPos) : entity(entity), oldPos(oldPos), newPos(newPos) {}
+	MovedEvent(Entity entity, vec2f oldPos, vec2f newPos) : entity(entity), oldPos(oldPos), newPos(newPos) {}
 	Entity entity;
 	vec2f oldPos, newPos;
 };

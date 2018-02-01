@@ -41,9 +41,9 @@ struct RenderSystem : public System {
 public:
 	RenderSystem(SDL_Renderer* renderer, int screenwidth, int screenheight)
 		: _renderer(renderer),
+		  timeSinceStart(0.0),
 		  _screenwidth(screenwidth),
-		  _screenheight(screenheight),
-		  timeSinceStart(0.0) {
+		  _screenheight(screenheight) {
 		  	_view.scale = 1;
 		  };
 	void renderEntity(Entity entity);

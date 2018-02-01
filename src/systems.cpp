@@ -169,19 +169,17 @@ bool CollisionSystem::collides(Entity one, Entity two) {
 	auto collide2 = world->registry.get<Collidable>(two);
 
 	switch (collide1.type) {
-	case Collidable::Type::Circle: {
+	case Collidable::Type::Circle:
 		switch(collide2.type) {
-		case Collidable::Type::Circle: {
+		case Collidable::Type::Circle:
 			// TODO: 3D collisions
 			return spatial1.position.dist(spatial2.position) < collide1.circle_radius + collide2.circle_radius;
-			break;
 		}
-		}
+		// TODO: rectangle-circle collisions
 		break;
 	}
-	default:
-		assert(false);
-	}
+	assert(false);
+	return false;
 }
 
 // TODO: listen to EntityCreated and EntityDestroyed?
