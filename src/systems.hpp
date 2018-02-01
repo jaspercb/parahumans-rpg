@@ -97,3 +97,11 @@ private:
 	void tickCondition(Entity entity, Condition& condition, TimeDelta dt);
 	static void recalculateStats(Stats &stats, Conditions &conditions);
 };
+
+class CollisionHandlerSystem : public System {
+public:
+	CollisionHandlerSystem() {};
+	void receive(const CollidedEvent &e);
+private:
+	void handle(Entity one, Entity two);
+};

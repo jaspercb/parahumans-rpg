@@ -114,3 +114,13 @@ struct Destructible {
 struct Controllable {
 	Controllable() {}
 };
+
+struct OnCollision {
+	/* 
+	Stores behavioral data about what to do when we encounter a collision.
+	*/
+	OnCollision();
+	DamageType damagetype;
+	float damage;
+	std::vector<Condition> conditions;
+};

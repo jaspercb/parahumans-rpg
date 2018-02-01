@@ -333,3 +333,21 @@ void ConditionSystem::recalculateStats(Stats &stats, Conditions &conditions) {
 	}
 	stats.dirty = false;
 }
+
+void CollisionHandlerSystem::receive(const CollidedEvent &e) {
+	handle(e.one, e.two);
+	handle(e.two, e.one);
+}
+
+void CollisionHandlerSystem::handle(Entity source, Entity target) {
+	// Applies source's on-collision effects to target
+	if (world->registry.has<OnCollision>(source)) {
+		const auto &oncollision = world->registry.get<OnCollision>(source);
+		for (const auto &condition : oncollision.conditions) {
+			world->bus.publish<ConditionEvent>(condition, source, target);
+		}
+		if (oncollision.damage) {
+			world->bus.publish<DamagedEvent>(source, target, oncollision.damagetype, oncollision.damage);
+		}
+	}
+}
