@@ -1,5 +1,9 @@
 #pragma once
+#include <SDL2/SDL.h>
+
 #include "events.hpp"
+#include "entt/entt.hpp"
+#include "systems.hpp"
 
 struct World {
 	entt::Registry<Entity> registry;

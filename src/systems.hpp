@@ -1,6 +1,5 @@
 #pragma once
 
-#include "entt/entt.hpp"
 #include "types.hpp"
 #include "events.hpp"
 #include "components.hpp"

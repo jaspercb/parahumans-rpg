@@ -1,5 +1,7 @@
 #pragma once
 
+#include "types.hpp"
+
 struct ControlSignal {
 	enum Type {
 		Move,

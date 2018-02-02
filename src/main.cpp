@@ -39,6 +39,7 @@ public:
 			world.registry.assign<Renderable>(entity, Renderable::Type::Person);
 			world.registry.assign<Destructible>(entity, 50);
 			world.registry.assign<Controllable>(entity);
+			world.registry.assign<Collidable>(entity, Collidable::Circle, 10);
 			world.registry.assign<Conditions>(entity);
 			world.registry.assign<Stats>(entity, 133 /*movespeed*/, 40 /*accel*/);
 			controlled = entity;

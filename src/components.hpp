@@ -1,6 +1,8 @@
 #pragma once
 
 #include <unordered_set>
+#include <list>
+#include <vector>
 
 #include "sdlTools.hpp"
 #include "types.hpp"
@@ -97,6 +99,9 @@ struct Collidable {
 		};
 	};
 	std::unordered_set<Entity> ignored;
+
+	Collidable(Type type, float arg1)
+		: type(type), circle_radius(arg1) {}
 
 	bool canCollide(Entity other) const {
 		return ignored.find(other) != ignored.end();

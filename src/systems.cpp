@@ -159,6 +159,7 @@ CollisionSystem::CollisionSystem(int gridwidth)
 {}
 
 bool CollisionSystem::collides(Entity one, Entity two) {
+	if (one == two) return false;
 	if (!world->registry.has<SpatialData>(one)
 	 || !world->registry.has<Collidable>(one)
 	 || !world->registry.has<SpatialData>(two)
