@@ -6,23 +6,17 @@
 
 namespace {
 
+class Receiver {
+public:
+	Receiver() : callcount(0) {}
+	void receive(const CollidedEvent &e) {
+		callcount += 1;
+	}
+	int callcount;
+};
+
 class CollisionSystemTest : public ::testing::Test {
  protected:
-  // You can remove any or all of the following functions if its body
-  // is empty.
-  World world;
-  std::shared_ptr<CollisionSystem> collisionsystem;
-  CollisionSystemTest() {
-    // You can do set-up work for each test here.
-  }
-
-  virtual ~CollisionSystemTest() {
-    // You can do clean-up work that doesn't throw exceptions here.
-  }
-
-  // If the constructor and destructor are not enough for setting up
-  // and cleaning up each test, you can define the following methods:
-
   virtual void SetUp() {
     // Code here will be called immediately after the constructor (right
     // before each test).
@@ -31,15 +25,10 @@ class CollisionSystemTest : public ::testing::Test {
     world.addSystem(collisionsystem);
   }
 
-  virtual void TearDown() {
-    // Code here will be called immediately after each test (right
-    // before the destructor).
-  }
-
-  // Objects declared here can be used by all tests in the test case for Foo.
+  World world;
+  std::shared_ptr<CollisionSystem> collisionsystem;
 };
 
-// Tests that the Foo::Bar() method does Abc.
 TEST_F(CollisionSystemTest, DoesNotSelfCollide) {
   auto entity = world.registry.create();
   world.registry.assign<SpatialData>(entity, vec2f(0, 0));
@@ -63,6 +52,42 @@ TEST_F(CollisionSystemTest, CircleCollision) {
   EXPECT_EQ(true, collisionsystem->collides(one, two));
   EXPECT_EQ(true, collisionsystem->collides(two, three));
   EXPECT_EQ(false, collisionsystem->collides(one, three));
+}
+
+TEST_F(CollisionSystemTest, CollisionTriggersCollideEvent) {
+  auto one = world.registry.create();
+  world.registry.assign<SpatialData>(one, vec2f(0, 0));
+  world.registry.assign<Collidable>(one, Collidable::Circle, 10);
+
+  auto two = world.registry.create();
+  world.registry.assign<SpatialData>(two, vec2f(5, -5));
+  world.registry.assign<Collidable>(two, Collidable::Circle, 20);
+
+  auto receiver = std::make_shared<Receiver>();
+  world.bus.reg(receiver);
+  world.bus.publish<MovedEvent>(two, vec2f(-10e10, -10e10), vec2f(5, -5));
+  world.bus.publish<MovedEvent>(one, vec2f(-10e10, -10e10), vec2f(0, 0));
+  EXPECT_EQ(1, receiver->callcount);
+}
+
+TEST_F(CollisionSystemTest, NoEventIfCollisionIgnored) {
+  // These two entities should collide, but `one`
+  // is ignoring collisions with `two`.
+  auto one = world.registry.create();
+  world.registry.assign<SpatialData>(one, vec2f(0, 0));
+  world.registry.assign<Collidable>(one, Collidable::Circle, 10);
+  auto two = world.registry.create();
+  world.registry.assign<SpatialData>(two, vec2f(5, -5));
+  world.registry.assign<Collidable>(two, Collidable::Circle, 20);
+
+  auto &one_collidable = world.registry.get<Collidable>(one);
+  one_collidable.ignored.insert(two);
+
+  auto receiver = std::make_shared<Receiver>();
+  world.bus.reg(receiver);
+  world.bus.publish<MovedEvent>(two, vec2f(-10e10, -10e10), vec2f(5, -5));
+  world.bus.publish<MovedEvent>(one, vec2f(-10e10, -10e10), vec2f(0, 0));
+  EXPECT_EQ(0, receiver->callcount);
 }
 }  // namespace
 

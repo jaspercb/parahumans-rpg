@@ -199,17 +199,17 @@ void CollisionSystem::receive(const MovedEvent &e) {
 		spatial_hash[oldGridCoords].erase(e.entity);
 		spatial_hash[newGridCoords].insert(e.entity);
 	}
-	static vec2i ddpos[5] = {{0,0},{1,0},{1,-1},{0,-1},{-1,-1}};
-	for (int i=0; i<5; i++) {
-		auto dpos = ddpos[i];
-		auto iter = spatial_hash.find(newGridCoords + dpos);
-		if (iter != spatial_hash.end()) {
-			for (const auto &entity : iter->second) {
-				if ((e.entity != entity) && collides(e.entity, entity)) {
-					auto collide1 = world->registry.get<Collidable>(e.entity);
-					auto collide2 = world->registry.get<Collidable>(entity);
-					if (collide1.canCollide(entity) && collide2.canCollide(e.entity)) {
-						world->bus.publish<CollidedEvent>(e.entity, entity);
+	for (int x=-1; x<=1; x++) {
+		for (int y=-1; y<=1; y++) {
+			auto iter = spatial_hash.find(newGridCoords + vec2i(x, y));
+			if (iter != spatial_hash.end()) {
+				for (const auto &entity : iter->second) {
+					if (collides(e.entity, entity)) {
+						auto collide1 = world->registry.get<Collidable>(e.entity);
+						auto collide2 = world->registry.get<Collidable>(entity);
+						if (collide1.canCollide(entity) && collide2.canCollide(e.entity)) {
+							world->bus.publish<CollidedEvent>(e.entity, entity);
+						}
 					}
 				}
 			}

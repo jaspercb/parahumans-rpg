@@ -104,7 +104,7 @@ struct Collidable {
 		: type(type), circle_radius(arg1) {}
 
 	bool canCollide(Entity other) const {
-		return ignored.find(other) != ignored.end();
+		return ignored.find(other) == ignored.end();
 	}
 };
 
