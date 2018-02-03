@@ -103,3 +103,9 @@ public:
 private:
 	void handle(Entity one, Entity two);
 };
+
+struct ControlSystem : public System {
+	ControlSystem() {};
+	void receive(const Control_MoveAccelEvent& e);
+	void receive(const Control_UseAbilityEvent& e);
+};

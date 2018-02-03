@@ -267,7 +267,7 @@ void InputSystem::update(TimeDelta dt) {
 	}
 
 	world->bus.publish<SDL_Event>(e);
-	world->registry.view<SpatialData, Controllable, Stats>().each([dt, keys](auto entity, auto &sdata, auto &controllable, auto &stats) {
+	world->registry.view<SpatialData, Controllable>().each([this, dt, keys](auto entity, auto &sdata, auto &controllable) {
 		vec2f accel = {0, 0};
 		if (keys[SDL_SCANCODE_LEFT]) {
 			accel.x -= 1;
@@ -285,16 +285,7 @@ void InputSystem::update(TimeDelta dt) {
 			accel.x += 1;
 			accel.y += 1;
 		}
-		accel.normalize();
-		accel *= stats.accel();
-		sdata.velocity += accel;
-		if (sdata.velocity.x || sdata.velocity.y) {
-			sdata.orientation = atan2f(sdata.velocity.y, sdata.velocity.x);
-		}
-		sdata.velocity *= stats.speed() / (stats.accel() + stats.speed());
-		if (!accel.x && !accel.y && sdata.velocity.length() < 1 /*epsilon value*/ ) {
-			sdata.velocity *= 0;
-		}
+		world->bus.publish<Control_MoveAccelEvent>(entity, accel);
 	});
 }
 
@@ -365,3 +356,21 @@ void CollisionHandlerSystem::handle(Entity source, Entity target) {
 		}
 	}
 }
+
+void ControlSystem::receive(const Control_MoveAccelEvent& e) {
+	auto accel = e.accel;
+	auto& sdata = world->registry.get<SpatialData>(e.entity);
+	const auto& stats = world->registry.get<Stats>(e.entity);
+	accel.normalize();
+	accel *= stats.accel();
+	sdata.velocity += accel;
+	if (sdata.velocity.x || sdata.velocity.y) {
+		sdata.orientation = atan2f(sdata.velocity.y, sdata.velocity.x);
+	}
+	sdata.velocity *= stats.speed() / (stats.accel() + stats.speed());
+	if (!accel.x && !accel.y && sdata.velocity.length() < 1 /*epsilon value*/ ) {
+		sdata.velocity *= 0;
+	}
+}
+
+void ControlSystem::receive(const Control_UseAbilityEvent& e) {}

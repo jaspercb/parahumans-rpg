@@ -194,10 +194,12 @@ struct Condition {
 
 struct Ability {
 	enum AbilityType {
-		FireProjectile
+		FireProjectile,
+		SelfCondition
 	};
 	union {
 		float projectile_speed;
+		Condition condition;
 	};
 };
 

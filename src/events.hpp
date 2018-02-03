@@ -47,21 +47,23 @@ struct ConditionEvent {
 	Entity source, receiver;
 };
 
+/* Control events represents an intent one step above keyboard input - move
+   here, use this ability, use this item. The Input System translates keyboard
+   events into these events.*/
+
 struct ControlEvent {
-	/* Represents an intent one step above keyboard input - move here, use this
-	   ability, use this item. The Input System translates keyboard events into
-	   these events.*/
-	ControlEvent() {};
-	enum Type {
-		MoveAccel // Accelerate as hard as possible in a direction
-	};
-	union {
-		struct {
-			vec2f moveaccel_accel;
-		};
-		struct {
-			int ability_id;
-			vec2f ability_target;
-		};
-	};
+	Entity entity;
+};
+
+struct Control_MoveAccelEvent : public ControlEvent {
+	Control_MoveAccelEvent(Entity entity, vec2f accel) 
+	: ControlEvent{entity}, accel(accel) {};
+	vec2f accel;
+};
+
+struct Control_UseAbilityEvent : public ControlEvent {
+	Control_UseAbilityEvent(Entity entity, vec2f target, int id)
+	: ControlEvent{entity}, target(target), ability_id(id) {}
+	vec2f target;
+	int ability_id;
 };

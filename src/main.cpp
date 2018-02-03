@@ -30,6 +30,7 @@ public:
 		world.addSystem(std::make_shared<CollisionSystem>(100 /* gridwidth */));
 		world.addSystem(std::make_shared<DestructibleSystem>());
 		world.addSystem(std::make_shared<InputSystem>());
+		world.addSystem(std::make_shared<ControlSystem>());
 		world.addSystem(std::make_shared<ConditionSystem>());
 		world.addSystem(std::make_shared<CollisionHandlerSystem>());
 
