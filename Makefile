@@ -21,9 +21,6 @@ LIB := -lSDL2
 TESTLIBS :=  -lgtest -lgtest_main -lpthread
 INC := -I include -I lib
 
-$(TARGET): $(OBJECTS)
-	@echo "    Linking... $(ccbold)$(TARGET)$(ccend)"; $(CC) $(CFLAGS) $^ -o $(TARGET) $(LIB);
-
 bin/client: $(OBJECTS)
 	@echo "    Linking... $(ccbold)$(TARGET)$(ccend)"; $(CC) $(CFLAGS) $^ src/main.cpp -o $(TARGET) $(LIB);
 
