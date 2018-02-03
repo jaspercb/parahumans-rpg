@@ -16,7 +16,7 @@ struct SpatialData {
 		timeMoving(0.0) {};
 
 	vec2f orientationToVec() const {
-		return vec2f(cos(orientation), sin(orientation));
+		return {cos(orientation), sin(orientation)};
 	};
 	bool isMoving() const {
 		return velocity.x || velocity.y;
@@ -124,7 +124,7 @@ struct OnCollision {
 	/* 
 	Stores behavioral data about what to do when we encounter a collision.
 	*/
-	OnCollision();
+	OnCollision() {};
 	DamageType damagetype;
 	float damage;
 	std::vector<Condition> conditions;

@@ -33,7 +33,7 @@ void RenderSystem::renderEntity(Entity entity) {
 	const auto &sdata = world->registry.get<SpatialData>(entity);
 	const auto &renderable = world->registry.get<Renderable>(entity);
 	vec2f fpos = renderCoordFromGlobal(sdata.position);
-	vec2i ipos = vec2i(fpos.x, fpos.y);
+	vec2i ipos = {fpos.x, fpos.y};
 	ipos.y -= sdata.z;
 	switch(renderable.type) {
 		case Renderable::Type::Circle: {
@@ -41,7 +41,7 @@ void RenderSystem::renderEntity(Entity entity) {
 			break;
 		}
 		case Renderable::Type::Line: {
-			vec2i offset(renderable.line_displacement_x, renderable.line_displacement_y);
+			vec2i offset = {renderable.line_displacement_x, renderable.line_displacement_y};
 			vec2i start = ipos - offset/2.0;
 			vec2i end   = ipos + offset/2.0;
 			lineColor(_renderer, start.x, start.y, end.x, end.y, SDL_ColortoUint32(renderable.color));
@@ -49,7 +49,7 @@ void RenderSystem::renderEntity(Entity entity) {
 		}
 		case Renderable::Type::Person: {
 			const auto& stats = world->registry.get<Stats>(entity);
-			vec2f orientation(0, 1);
+			vec2f orientation= {0, 1};
 			float walkspeed = stats.speed() * 0.065;
 			orientation.rotate(sdata.orientation);
 			float phase = sdata.timeMoving;
@@ -78,9 +78,9 @@ void RenderSystem::renderEntity(Entity entity) {
 			break; // TOO SLOW
 			// TODO: add scale dependency
 			float width = 50;
-			vec2f xstep(-width, 0);
+			vec2f xstep = {-width, 0};
 			xstep = renderCoordFromGlobal(xstep);
-			vec2f ystep(0, -width);
+			vec2f ystep = {0, -width};
 			ystep = renderCoordFromGlobal(ystep);
 			Sint16 vx[4];
 			Sint16 vy[4];
@@ -199,9 +199,10 @@ void CollisionSystem::receive(const MovedEvent &e) {
 		spatial_hash[oldGridCoords].erase(e.entity);
 		spatial_hash[newGridCoords].insert(e.entity);
 	}
-	for (int x=-1; x<=1; x++) {
-		for (int y=-1; y<=1; y++) {
-			auto iter = spatial_hash.find(newGridCoords + vec2i(x, y));
+	for (int dx=-1; dx<=1; dx++) {
+		for (int dy=-1; dy<=1; dy++) {
+			vec2i d = {dx, dy};
+			auto iter = spatial_hash.find(newGridCoords + d);
 			if (iter != spatial_hash.end()) {
 				for (const auto &entity : iter->second) {
 					if (collides(e.entity, entity)) {
@@ -242,6 +243,16 @@ void InputSystem::receive(const SDL_Event& e) {
 			world->bus.publish<ConditionEvent>(accelup, entity, entity);
 		});
 	}
+	else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_e) {
+		Entity projectile = world->registry.create();
+		world->registry.assign<SpatialData>(projectile, vec2f{0, 0}, vec2f{1, 0});
+		world->registry.assign<Renderable>(projectile, Renderable::Type::Circle);
+		world->registry.assign<Collidable>(projectile, Collidable::Circle, 10);
+		auto& collidable = world->registry.get<Collidable>(projectile);
+		world->registry.assign<OnCollision>(projectile);
+		auto& oncollision = world->registry.get<OnCollision>(projectile);
+		oncollision.damage = 1;
+	}
 }
 
 void InputSystem::update(TimeDelta dt) {
@@ -254,8 +265,10 @@ void InputSystem::update(TimeDelta dt) {
 		else
 			world->bus.publish<SDL_Event>(e);
 	}
+
+	world->bus.publish<SDL_Event>(e);
 	world->registry.view<SpatialData, Controllable, Stats>().each([dt, keys](auto entity, auto &sdata, auto &controllable, auto &stats) {
-		vec2f accel;
+		vec2f accel = {0, 0};
 		if (keys[SDL_SCANCODE_LEFT]) {
 			accel.x -= 1;
 			accel.y += 1;

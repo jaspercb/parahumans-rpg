@@ -35,7 +35,7 @@ public:
 
 		for (int i=0; i<1; i++) {
 			auto entity = world.registry.create();
-			world.registry.assign<SpatialData>(entity, vec2f(0, 0));
+			world.registry.assign<SpatialData>(entity, vec2f{0, 0});
 			world.registry.assign<Renderable>(entity, Renderable::Type::Person);
 			world.registry.assign<Destructible>(entity, 50);
 			world.registry.assign<Controllable>(entity);
@@ -46,13 +46,13 @@ public:
 		}
 		for (int i=0; i<10; i++) {
 			auto entity = world.registry.create();
-			world.registry.assign<SpatialData>(entity, vec2f(60*i, 0));
+			world.registry.assign<SpatialData>(entity, vec2f{60*i, 0});
 			world.registry.assign<Renderable>(entity, Renderable::Type::Cube);      
 		}
 		for (int x=0; x<20; x++) {
 		for (int y=0; y<20; y++) {
 			auto entity = world.registry.create();
-			world.registry.assign<SpatialData>(entity, vec2f(50*x, 50*y), vec2f(0, 0), -50.0);
+			world.registry.assign<SpatialData>(entity, vec2f{50*x, 50*y}, vec2f{0, 0}, -50.0);
 			world.registry.assign<Renderable>(entity, Renderable::Type::Cube);
 			}
 		}
@@ -78,7 +78,7 @@ public:
 		int postFrameTimeMilliseconds = SDL_GetTicks();
 		// If updating was slow, we should sleep less to maintain a consistent framerate
 		Uint32 delay = std::max(0, 1000/FPS - (postFrameTimeMilliseconds - currentFrameTimeMilliseconds));
-		printf("%d\n", postFrameTimeMilliseconds-currentFrameTimeMilliseconds);
+		// printf("%d\n", postFrameTimeMilliseconds-currentFrameTimeMilliseconds);
 		if (delay) SDL_Delay(delay);
 	}
 

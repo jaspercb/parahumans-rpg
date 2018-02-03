@@ -27,10 +27,9 @@ struct MovementSystem : public System {
 struct View {
 public:
 	template <typename T> vec2<T> inline viewCoordFromGlobal(vec2<T> globalpos) const {
-		auto x = (globalpos.x - viewcenter.x) * scale;
-		auto y = (globalpos.y - viewcenter.y) * scale;
-		return vec2<T>((x - y),
-		             (x + y)/1.73);
+		T x = (globalpos.x - viewcenter.x) * scale;
+		T y = (globalpos.y - viewcenter.y) * scale;
+		return {(x - y), (x + y)/1.73};
 	}
 	float scale; // larger is bigger
 	vec2f viewcenter;
@@ -48,7 +47,7 @@ public:
 	void renderEntity(Entity entity);
 
 	template <typename T> vec2<T> inline renderCoordFromGlobal(vec2<T> globalpos) const {
-		return _view.viewCoordFromGlobal(globalpos) + vec2<T>(_screenwidth, _screenheight)/2;
+		return _view.viewCoordFromGlobal(globalpos) + vec2<T>{_screenwidth, _screenheight}/2;
 	}
 
 	void update(TimeDelta dt) override;
@@ -68,7 +67,7 @@ private:
 	const int gridwidth;
 	std::map<vec2i, std::set<Entity>> spatial_hash;
 	const vec2i getGridCoords(vec2f pos) const {
-		return vec2i(std::floor(pos.x/gridwidth), std::floor(pos.y/gridwidth));
+		return {std::floor(pos.x/gridwidth), std::floor(pos.y/gridwidth)};
 	}
 	static bool _collides(const SpatialData &spatial1, const Collidable &collide1,
                           const SpatialData &spatial2, const Collidable &collide2);

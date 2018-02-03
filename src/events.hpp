@@ -46,3 +46,22 @@ struct ConditionEvent {
 	Condition condition;
 	Entity source, receiver;
 };
+
+struct ControlEvent {
+	/* Represents an intent one step above keyboard input - move here, use this
+	   ability, use this item. The Input System translates keyboard events into
+	   these events.*/
+	ControlEvent() {};
+	enum Type {
+		MoveAccel // Accelerate as hard as possible in a direction
+	};
+	union {
+		struct {
+			vec2f moveaccel_accel;
+		};
+		struct {
+			int ability_id;
+			vec2f ability_target;
+		};
+	};
+};
