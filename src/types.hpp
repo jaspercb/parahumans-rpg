@@ -195,6 +195,26 @@ struct Condition {
 	bool operator<(const Condition& other) const {return priority < other.priority;}
 };
 
+struct OnCollision {
+	/* 
+	A component storing behavioral data about what to do upon colliding.
+	*/
+	OnCollision() {};
+	DamageType damagetype;
+	float damage;
+	std::vector<Condition> conditions;
+};
+
+struct Renderable;
+
+struct ProjectileTemplate {
+	float projectile_speed;
+	OnCollision* oncollision;
+	Renderable* renderable;
+	// float n_collisions; // collisions until projectile ends
+	// lifetime
+};
+
 struct Ability {
 	enum Type {
 		FireProjectile,
@@ -202,9 +222,7 @@ struct Ability {
 	};
 	Type type;
 	union {
-		struct {
-			float projectile_speed;
-		};
+		ProjectileTemplate projectile_template;
 		Condition condition;
 	};
 	float timeSinceUsed;

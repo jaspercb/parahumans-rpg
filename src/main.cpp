@@ -43,14 +43,19 @@ public:
 			world.registry.assign<Renderable>(entity, Renderable::Type::Person);
 			world.registry.assign<Destructible>(entity, 50);
 			world.registry.assign<Controllable>(entity);
-			world.registry.assign<Collidable>(entity, Collidable::Circle, 10);
+			world.registry.assign<Collidable>(entity, Collidable::Circle, 20);
+			world.bus.publish<CollidableCreatedEvent>(entity);
 			world.registry.assign<Conditions>(entity);
 			world.registry.assign<Stats>(entity, 133 /*movespeed*/, 40 /*accel*/);
 		}
-		for (int i=0; i<10; i++) {
+		for (int i=0; i<8; i++) {
 			auto entity = world.registry.create();
-			world.registry.assign<SpatialData>(entity, vec2f{60*i, 0});
-			world.registry.assign<Renderable>(entity, Renderable::Type::Cube);      
+			world.registry.assign<SpatialData>(entity, 250 * vec2f{sin(i*M_PI/4), cos(i*M_PI/4)});
+			world.registry.assign<Renderable>(entity, Renderable::Type::Person);
+			world.registry.assign<Destructible>(entity, 50);
+			world.registry.assign<Collidable>(entity, Collidable::Circle, 20);
+			world.bus.publish<CollidableCreatedEvent>(entity);
+			world.registry.assign<Stats>(entity, 0, 0);
 		}
 		// floor
 		for (int x=0; x<20; x++) {

@@ -75,6 +75,7 @@ public:
 	CollisionSystem(int gridwidth);
 	bool collides(Entity one, Entity two);
 	void receive(const MovedEvent &e);
+	void receive(const CollidableCreatedEvent& e);
 private:
 	const int gridwidth;
 	std::map<vec2i, std::set<Entity>> spatial_hash;

@@ -166,10 +166,10 @@ bool CollisionSystem::collides(Entity one, Entity two) {
 	 || !world->registry.has<Collidable>(one)
 	 || !world->registry.has<SpatialData>(two)
 	 || !world->registry.has<Collidable>(two)) return false;
-	auto spatial1 = world->registry.get<SpatialData>(one);
-	auto spatial2 = world->registry.get<SpatialData>(two);
-	auto collide1 = world->registry.get<Collidable>(one);
-	auto collide2 = world->registry.get<Collidable>(two);
+	const auto& spatial1 = world->registry.get<SpatialData>(one);
+	const auto& spatial2 = world->registry.get<SpatialData>(two);
+	const auto& collide1 = world->registry.get<Collidable>(one);
+	const auto& collide2 = world->registry.get<Collidable>(two);
 	return _collides(spatial1, collide1, spatial2, collide2);
 }
 
@@ -220,10 +220,17 @@ void CollisionSystem::receive(const MovedEvent &e) {
 	}
 }
 
+void CollisionSystem::receive(const CollidableCreatedEvent& e) {
+	const auto& sdata = world->registry.get<SpatialData>(e.entity);
+	auto coords = getGridCoords(sdata.position);
+	spatial_hash[coords].insert(e.entity);
+}
+
 DestructibleSystem::DestructibleSystem() {}
 
 void DestructibleSystem::receive(const DamagedEvent &e) {
 	// TODO: Pay attention to damage types, source
+	std::cout<<"damaged"<<e.damage<<std::endl;
 	if (!world->registry.has<Destructible>(e.damaged)) return;
 	auto &destructible = world->registry.get<Destructible>(e.damaged);
 	if (!destructible.indestructible) {
@@ -251,9 +258,14 @@ void InputSystem::receive(const SDL_Event& e) {
 	accelup.condition = {Condition::Priority::Multiplier, Condition::Type::MOD_ACCEL, 2, 1};
 
 	Ability fireball;
+	ProjectileTemplate fireball_template;
+	fireball_template.oncollision = new OnCollision();
+	fireball_template.oncollision->damage = 5;
+	fireball_template.renderable = new Renderable();
+	fireball_template.projectile_speed = 50;
+	fireball.projectile_template = fireball_template;
 	fireball.type = Ability::Type::FireProjectile;
 	fireball.cooldown = 0;
-	fireball.projectile_speed = 50;
 	// Condition burn = {Condition::Priority::None, Condition::Type::BURN, 10, 200000000};
 
 	switch(e.type) {
@@ -274,6 +286,9 @@ void InputSystem::receive(const SDL_Event& e) {
 		}
 		break;
 	}
+
+	delete fireball_template.oncollision;
+	delete fireball_template.renderable;
 }
 
 void InputSystem::update(TimeDelta dt) {
@@ -320,10 +335,11 @@ void ConditionSystem::receive(const ConditionEvent& e) {
 void ConditionSystem::update(TimeDelta dt) {
 	world->registry.view<Conditions, Stats>().each([dt, this](auto entity, auto &conditions, auto &stats) {
 		for (auto condition = conditions.list.begin(); condition != conditions.list.end(); condition++) {
-			tickCondition(entity, *condition, dt);
 			if (condition->isExpired()) {
 				condition = conditions.list.erase(condition);
 				stats.dirty = true;
+			} else {
+				tickCondition(entity, *condition, dt);
 			}
 		}
 		if (stats.dirty) {
@@ -401,16 +417,19 @@ void ControlSystem::receive(const Control_UseAbilityEvent& e) {
 	SpatialData& abilities = world->registry.get<SpatialData>(e.entity);
 	switch(e.ability->type) {
 	case Ability::Type::FireProjectile: {
+		const ProjectileTemplate& templat = e.ability->projectile_template;
 		auto &sdata = world->registry.get<SpatialData>(e.entity);
 		auto velocity = e.target - sdata.position;
-		velocity.truncate(e.ability->projectile_speed);
+		velocity.truncate(templat.projectile_speed);
 		Entity projectile = world->registry.create();
 		world->registry.assign<SpatialData>(projectile, sdata.position, velocity);
-		world->registry.assign<Renderable>(projectile, Renderable::Type::Circle);
+		if (templat.renderable)
+			world->registry.assign<Renderable>(projectile, *templat.renderable);
+		if (templat.oncollision)
+			world->registry.assign<OnCollision>(projectile, *templat.oncollision);
 		auto& collidable = world->registry.assign<Collidable>(projectile, Collidable::Circle, 10);
+		world->bus.publish<CollidableCreatedEvent>(projectile);
 		collidable.addIgnored(e.entity);
-		auto& oncollision = world->registry.assign<OnCollision>(projectile);
-		oncollision.damage = 1;
 		}
 		break;
 	case Ability::Type::SelfCondition:

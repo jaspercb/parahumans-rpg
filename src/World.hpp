@@ -9,7 +9,7 @@ struct World {
 	entt::Registry<Entity> registry;
 	entt::ManagedBus<MovedEvent, CollidedEvent, DamagedEvent, WindowExitEvent,
 	                 ConditionEvent, SDL_Event, Control_UseAbilityEvent,
-	                 Control_MoveAccelEvent> bus;
+	                 Control_MoveAccelEvent, CollidableCreatedEvent> bus;
 	std::list<std::shared_ptr<System>> systems;
 
 	template<typename SystemType> void addSystem(std::shared_ptr<SystemType> system) {
