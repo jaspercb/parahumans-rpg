@@ -106,6 +106,10 @@ struct Collidable {
 	bool canCollide(Entity other) const {
 		return ignored.find(other) == ignored.end();
 	}
+
+	void addIgnored(Entity other) {
+		ignored.insert(other);
+	}
 };
 
 struct Destructible {
@@ -128,4 +132,8 @@ struct OnCollision {
 	DamageType damagetype;
 	float damage;
 	std::vector<Condition> conditions;
+};
+
+struct AbilityData {
+	std::vector<Ability> abilities;
 };

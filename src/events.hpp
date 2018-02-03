@@ -62,8 +62,8 @@ struct Control_MoveAccelEvent : public ControlEvent {
 };
 
 struct Control_UseAbilityEvent : public ControlEvent {
-	Control_UseAbilityEvent(Entity entity, vec2f target, int id)
-	: ControlEvent{entity}, target(target), ability_id(id) {}
+	Control_UseAbilityEvent(Entity entity, vec2f target, Ability* ability)
+	: ControlEvent{entity}, target(target), ability(ability) {}
 	vec2f target;
-	int ability_id;
+	Ability* ability;
 };

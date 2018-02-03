@@ -3,6 +3,7 @@
 #include "sdlTools.hpp"
 
 #include <unistd.h>
+#include <iostream>
 
 #include <map>
 
@@ -21,10 +22,11 @@ void MovementSystem::update(TimeDelta dt) {
 	});
 };
 
-void renderOvalOffset(SDL_Renderer* renderer, View* view, vec2i pos, vec2i offset, float angle, float height, float rx, float ry, SDL_Color color) {
+void renderOvalOffset(SDL_Renderer* renderer, const ViewTransform* view, vec2i ipos, vec2i offset, float angle, float height, float rx, float ry, SDL_Color color) {
 	const float scale = view->scale;
 	offset.rotate(angle);
-	vec2i screenpos = pos + view->viewCoordFromGlobal(offset);
+
+	vec2i screenpos = ipos + view->viewCoordFromGlobal(offset);
 	filledEllipseColor(renderer, screenpos.x, screenpos.y - scale*height, int(rx*scale), int(ry*scale), SDL_ColortoUint32(color));
 	ellipseColor(renderer, screenpos.x, screenpos.y - scale*height, int(rx*scale), int(ry*scale), SDL_ColortoUint32(SDL_Colors::BLACK));
 }
@@ -32,12 +34,12 @@ void renderOvalOffset(SDL_Renderer* renderer, View* view, vec2i pos, vec2i offse
 void RenderSystem::renderEntity(Entity entity) {
 	const auto &sdata = world->registry.get<SpatialData>(entity);
 	const auto &renderable = world->registry.get<Renderable>(entity);
-	vec2f fpos = renderCoordFromGlobal(sdata.position);
+	vec2f fpos = _viewxform->screenCoordFromGlobal(sdata.position);
 	vec2i ipos = {fpos.x, fpos.y};
 	ipos.y -= sdata.z;
 	switch(renderable.type) {
 		case Renderable::Type::Circle: {
-			filledCircleColor(_renderer, ipos.x, ipos.y, _view.scale * renderable.circle_radius, SDL_ColortoUint32(renderable.color));
+			filledCircleColor(_renderer, ipos.x, ipos.y, _viewxform->scale * renderable.circle_radius, SDL_ColortoUint32(renderable.color));
 			break;
 		}
 		case Renderable::Type::Line: {
@@ -53,23 +55,23 @@ void RenderSystem::renderEntity(Entity entity) {
 			float walkspeed = stats.speed() * 0.065;
 			orientation.rotate(sdata.orientation);
 			float phase = sdata.timeMoving;
-			float depthy = renderCoordFromGlobal(orientation).y;
+			float depthy = _viewxform->screenCoordFromGlobal(orientation).y;
 			if (depthy > 0) {
-				renderOvalOffset(_renderer, &_view, ipos, {0, -12}, sdata.orientation, 18, 5, 5, renderable.color); // arms
-				renderOvalOffset(_renderer, &_view, ipos, {6*sin(phase*walkspeed), -6}, sdata.orientation, 0, 4, 4, renderable.color); // legs
+				renderOvalOffset(_renderer, _viewxform, ipos, {0, -12}, sdata.orientation, 18, 5, 5, renderable.color); // arms
+				renderOvalOffset(_renderer, _viewxform, ipos, {6*sin(phase*walkspeed), -6}, sdata.orientation, 0, 4, 4, renderable.color); // legs
 			} else{
-				renderOvalOffset(_renderer, &_view, ipos, {0,  12}, sdata.orientation, 18, 5, 5, renderable.color);
-				renderOvalOffset(_renderer, &_view, ipos, {-6*sin(phase*walkspeed), 6}, sdata.orientation, 0, 4, 4, renderable.color);
+				renderOvalOffset(_renderer, _viewxform, ipos, {0,  12}, sdata.orientation, 18, 5, 5, renderable.color);
+				renderOvalOffset(_renderer, _viewxform, ipos, {-6*sin(phase*walkspeed), 6}, sdata.orientation, 0, 4, 4, renderable.color);
 			}
 			// head, body
-			renderOvalOffset(_renderer, &_view, ipos, {0, 0}, sdata.orientation, 16, 10, 15, renderable.color); // body
-			renderOvalOffset(_renderer, &_view, ipos, {0, 0}, sdata.orientation, 43, 15, 15, renderable.color); // head
+			renderOvalOffset(_renderer, _viewxform, ipos, {0, 0}, sdata.orientation, 16, 10, 15, renderable.color); // body
+			renderOvalOffset(_renderer, _viewxform, ipos, {0, 0}, sdata.orientation, 43, 15, 15, renderable.color); // head
 			if (depthy <= 0) {
-				renderOvalOffset(_renderer, &_view, ipos, {0, -12}, sdata.orientation, 18, 5, 5, renderable.color); // arms
-				renderOvalOffset(_renderer, &_view, ipos, {6*sin(phase*walkspeed), -6}, sdata.orientation, 0, 4, 4, renderable.color); // legs
+				renderOvalOffset(_renderer, _viewxform, ipos, {0, -12}, sdata.orientation, 18, 5, 5, renderable.color); // arms
+				renderOvalOffset(_renderer, _viewxform, ipos, {6*sin(phase*walkspeed), -6}, sdata.orientation, 0, 4, 4, renderable.color); // legs
 			} else{
-				renderOvalOffset(_renderer, &_view, ipos, {0,  12}, sdata.orientation, 18, 5, 5, renderable.color);
-				renderOvalOffset(_renderer, &_view, ipos, {-6*sin(phase*walkspeed), 6}, sdata.orientation, 0, 4, 4, renderable.color);
+				renderOvalOffset(_renderer, _viewxform, ipos, {0,  12}, sdata.orientation, 18, 5, 5, renderable.color);
+				renderOvalOffset(_renderer, _viewxform, ipos, {-6*sin(phase*walkspeed), 6}, sdata.orientation, 0, 4, 4, renderable.color);
 			}
 			break;
 		}
@@ -79,9 +81,9 @@ void RenderSystem::renderEntity(Entity entity) {
 			// TODO: add scale dependency
 			float width = 50;
 			vec2f xstep = {-width, 0};
-			xstep = renderCoordFromGlobal(xstep);
+			xstep = _viewxform->screenCoordFromGlobal(xstep);
 			vec2f ystep = {0, -width};
-			ystep = renderCoordFromGlobal(ystep);
+			ystep = _viewxform->screenCoordFromGlobal(ystep);
 			Sint16 vx[4];
 			Sint16 vy[4];
 			vx[0] = ipos.x;
@@ -120,8 +122,8 @@ void RenderSystem::renderEntity(Entity entity) {
 	const auto &destructible = world->registry.get<Destructible>(entity);
 	static const vec2i HP_BAR_OFFSET = {0, -70};
 	static const vec2i HP_BAR_SIZE = {50, 10};
-	vec2i topleft = ipos + HP_BAR_OFFSET * _view.scale - HP_BAR_SIZE/2;
-	vec2i bottomright = ipos + HP_BAR_OFFSET * _view.scale + HP_BAR_SIZE/2;
+	vec2i topleft = ipos + HP_BAR_OFFSET * _viewxform->scale - HP_BAR_SIZE/2;
+	vec2i bottomright = ipos + HP_BAR_OFFSET * _viewxform->scale + HP_BAR_SIZE/2;
 	boxColor(_renderer, topleft.x, topleft.y, bottomright.x, bottomright.y, SDL_ColortoUint32(SDL_Colors::RED));
 	bottomright.x -= HP_BAR_SIZE.x * (1.0 - float(destructible.HP)/destructible.HP.max);
 	boxColor(_renderer, topleft.x, topleft.y, bottomright.x, bottomright.y, SDL_ColortoUint32(SDL_Colors::GREEN));
@@ -130,15 +132,15 @@ void RenderSystem::renderEntity(Entity entity) {
 void RenderSystem::update(TimeDelta dt) {
 	// Fill screen with white
 	SDL_Renderer* renderer = _renderer;
-	const View* view = &_view;
 	SDL_SetRenderDrawColor(_renderer, 255, 255, 255, 255); // white
 	SDL_RenderClear(renderer);
 
 	// distance from camera -> renderable
 	std::multimap<float, Entity> drawqueue;
 
-	world->registry.view<SpatialData, Renderable>().each([dt, &view, &drawqueue](Entity entity, SpatialData &sdata, Renderable &renderable) {
+	world->registry.view<SpatialData, Renderable>().each([dt, this, &drawqueue](Entity entity, SpatialData &sdata, Renderable &renderable) {
 		switch(renderable.type) {
+			// Different renderables have a different effective z-buffer for back-to-front painting
 			case Renderable::Type::Cube:
 				drawqueue.emplace(sdata.position.x - 25 + sdata.position.y - 25 + sdata.z, entity);
 				break;
@@ -231,27 +233,46 @@ void DestructibleSystem::receive(const DamagedEvent &e) {
 
 void DestructibleSystem::update(TimeDelta dt) {}
 
-InputSystem::InputSystem() {}
+vec2f InputSystem::getMouseGlobalCoords() const {
+	vec2i screenpos;
+	SDL_GetMouseState(&screenpos.x, &screenpos.y);
+	return _viewxform->globalCoordFromScreen(screenpos);
+}
 
 void InputSystem::receive(const SDL_Event& e) {
-	if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_q) {
-		Condition speedup = {Condition::Priority::Multiplier, Condition::Type::MOD_SPEED, 2, 1 /* seconds */};
-		Condition accelup = {Condition::Priority::Multiplier, Condition::Type::MOD_ACCEL, 2, 1};
-		Condition burn = {Condition::Priority::None, Condition::Type::BURN, 10, 200000000};
-		world->registry.view<Conditions, Stats>().each([this, speedup, accelup](auto entity, auto &conditions, auto &stats) {
-			world->bus.publish<ConditionEvent>(speedup, entity, entity);
-			world->bus.publish<ConditionEvent>(accelup, entity, entity);
-		});
-	}
-	else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_e) {
-		Entity projectile = world->registry.create();
-		world->registry.assign<SpatialData>(projectile, vec2f{0, 0}, vec2f{1, 0});
-		world->registry.assign<Renderable>(projectile, Renderable::Type::Circle);
-		world->registry.assign<Collidable>(projectile, Collidable::Circle, 10);
-		auto& collidable = world->registry.get<Collidable>(projectile);
-		world->registry.assign<OnCollision>(projectile);
-		auto& oncollision = world->registry.get<OnCollision>(projectile);
-		oncollision.damage = 1;
+	Ability speedup;
+	speedup.type = Ability::Type::SelfCondition;
+	speedup.cooldown = 0;
+	speedup.condition = {Condition::Priority::Multiplier, Condition::Type::MOD_SPEED, 2, 1 /* seconds */};
+
+	Ability accelup;
+	accelup.type = Ability::Type::SelfCondition;
+	accelup.cooldown = 0;
+	accelup.condition = {Condition::Priority::Multiplier, Condition::Type::MOD_ACCEL, 2, 1};
+
+	Ability fireball;
+	fireball.type = Ability::Type::FireProjectile;
+	fireball.cooldown = 0;
+	fireball.projectile_speed = 50;
+	// Condition burn = {Condition::Priority::None, Condition::Type::BURN, 10, 200000000};
+
+	switch(e.type) {
+	case SDL_KEYDOWN:
+		switch(e.key.keysym.sym) {
+		case SDLK_q:
+			world->registry.view<Controllable>().each([this, &speedup, &accelup](auto entity, const auto &controllable) {
+				world->bus.publish<Control_UseAbilityEvent>(entity, vec2f{0, 0}, &speedup);
+				world->bus.publish<Control_UseAbilityEvent>(entity, vec2f{0, 0}, &accelup);
+			});
+			break;
+		case SDLK_e:
+			auto target = getMouseGlobalCoords();
+			world->registry.view<Controllable>().each([this, target, &fireball](auto entity, const auto &controllable) {
+				world->bus.publish<Control_UseAbilityEvent>(entity, target, &fireball);
+			});
+			break;
+		}
+		break;
 	}
 }
 
@@ -358,9 +379,9 @@ void CollisionHandlerSystem::handle(Entity source, Entity target) {
 }
 
 void ControlSystem::receive(const Control_MoveAccelEvent& e) {
-	auto accel = e.accel;
-	auto& sdata = world->registry.get<SpatialData>(e.entity);
-	const auto& stats = world->registry.get<Stats>(e.entity);
+	SpatialData& sdata = world->registry.get<SpatialData>(e.entity);
+	const Stats& stats = world->registry.get<Stats>(e.entity);
+	vec2f accel = e.accel;
 	accel.normalize();
 	accel *= stats.accel();
 	sdata.velocity += accel;
@@ -373,4 +394,37 @@ void ControlSystem::receive(const Control_MoveAccelEvent& e) {
 	}
 }
 
-void ControlSystem::receive(const Control_UseAbilityEvent& e) {}
+void ControlSystem::receive(const Control_UseAbilityEvent& e) {
+	std::cout<<"a"<<std::endl;
+	if (!e.ability->isOffCooldown()) return;
+	std::cout<<"b"<<std::endl;
+	SpatialData& abilities = world->registry.get<SpatialData>(e.entity);
+	switch(e.ability->type) {
+	case Ability::Type::FireProjectile: {
+		auto &sdata = world->registry.get<SpatialData>(e.entity);
+		auto velocity = e.target - sdata.position;
+		velocity.truncate(e.ability->projectile_speed);
+		Entity projectile = world->registry.create();
+		world->registry.assign<SpatialData>(projectile, sdata.position, velocity);
+		world->registry.assign<Renderable>(projectile, Renderable::Type::Circle);
+		auto& collidable = world->registry.assign<Collidable>(projectile, Collidable::Circle, 10);
+		collidable.addIgnored(e.entity);
+		auto& oncollision = world->registry.assign<OnCollision>(projectile);
+		oncollision.damage = 1;
+		}
+		break;
+	case Ability::Type::SelfCondition:
+		std::cout<<"c"<<std::endl;
+		world->bus.publish<ConditionEvent>(e.ability->condition, e.entity, e.entity);
+		break;
+	}
+	e.ability->timeSinceUsed = 0;
+}
+
+void AbilitySystem::update(TimeDelta dt) {
+	world->registry.view<AbilityData>().each([dt, this](auto entity, auto &abilitydata) {
+		for (auto &ability : abilitydata.abilities) {
+			ability.timeSinceUsed += dt;
+		}
+	});
+}

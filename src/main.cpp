@@ -24,15 +24,18 @@ public:
 				fprintf(stderr, "Could not create renderer: %s\n", SDL_GetError());
 			}
 		}
-
+		viewxform.viewcenter = {0, 0};
+		viewxform.scale = 1;
+		viewxform.screensize = {SCREEN_WIDTH, SCREEN_HEIGHT};
 		world.addSystem(std::make_shared<MovementSystem>());
-		world.addSystem(std::make_shared<RenderSystem>(renderer, SCREEN_WIDTH, SCREEN_HEIGHT));
+		world.addSystem(std::make_shared<RenderSystem>(renderer, &viewxform));
 		world.addSystem(std::make_shared<CollisionSystem>(100 /* gridwidth */));
 		world.addSystem(std::make_shared<DestructibleSystem>());
-		world.addSystem(std::make_shared<InputSystem>());
+		world.addSystem(std::make_shared<InputSystem>(&viewxform));
 		world.addSystem(std::make_shared<ControlSystem>());
 		world.addSystem(std::make_shared<ConditionSystem>());
 		world.addSystem(std::make_shared<CollisionHandlerSystem>());
+		world.addSystem(std::make_shared<AbilitySystem>());
 
 		for (int i=0; i<1; i++) {
 			auto entity = world.registry.create();
@@ -43,13 +46,13 @@ public:
 			world.registry.assign<Collidable>(entity, Collidable::Circle, 10);
 			world.registry.assign<Conditions>(entity);
 			world.registry.assign<Stats>(entity, 133 /*movespeed*/, 40 /*accel*/);
-			controlled = entity;
 		}
 		for (int i=0; i<10; i++) {
 			auto entity = world.registry.create();
 			world.registry.assign<SpatialData>(entity, vec2f{60*i, 0});
 			world.registry.assign<Renderable>(entity, Renderable::Type::Cube);      
 		}
+		// floor
 		for (int x=0; x<20; x++) {
 		for (int y=0; y<20; y++) {
 			auto entity = world.registry.create();
@@ -99,7 +102,7 @@ private:
 	SDL_Window* window;
 	SDL_Renderer* renderer;
 	World world;
-	Entity controlled;
+	ViewTransform viewxform;
 	int lastFrameTimeMilliseconds;
 };
 

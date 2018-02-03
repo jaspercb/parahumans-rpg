@@ -110,6 +110,9 @@ public:
 	static float cross(vec2 v1, vec2 v2) {
 		return (v1.x * v2.y) - (v1.y * v2.x);
 	}
+	template<typename P> operator vec2<P>() const {
+		return {P(x), P(y)};
+	}
 };
 
 
@@ -193,16 +196,19 @@ struct Condition {
 };
 
 struct Ability {
-	enum AbilityType {
+	enum Type {
 		FireProjectile,
 		SelfCondition
 	};
+	Type type;
 	union {
-		float projectile_speed;
+		struct {
+			float projectile_speed;
+		};
 		Condition condition;
 	};
-};
+	float timeSinceUsed;
+	float cooldown;
 
-struct Abilities {
-	std::vector<Ability> abilities;
+	bool isOffCooldown() const { return timeSinceUsed >= cooldown; }
 };
