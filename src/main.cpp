@@ -51,7 +51,7 @@ public:
 		for (int i=0; i<8; i++) {
 			auto entity = world.registry.create();
 			world.registry.assign<SpatialData>(entity, 250 * vec2f{sin(i*M_PI/4), cos(i*M_PI/4)});
-			world.registry.assign<Renderable>(entity, Renderable::Type::Person);
+			world.registry.assign<Renderable>(entity, Renderable::Type::Person, SDL_Colors::GREY);
 			world.registry.assign<Destructible>(entity, 50);
 			world.registry.assign<Collidable>(entity, Collidable::Circle, 20);
 			world.bus.publish<CollidableCreatedEvent>(entity);

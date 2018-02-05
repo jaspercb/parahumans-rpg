@@ -180,11 +180,16 @@ struct Condition {
 
 	Priority priority;
 	Type type;
+	/* Condition strength means different things for different conditions.
+	   BURN/BLEED/POISON:    damage/second
+	   MOD_SPEED, MOD_ACCEL: amount to add/multiply by based on priority */
 	float strength;
 	TimeDelta timeLeft;
 	// Contagious?
 
-	bool isExpired() const {return timeLeft < 0;}
+	bool isExpired() const {
+		return timeLeft <= 0;
+	}
 	bool isBeneficial() const {
 		switch(type) {
 			case Type::BURN:
