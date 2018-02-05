@@ -133,7 +133,6 @@ struct OnCollision {
 	A component storing behavioral data about what to do upon colliding.
 	*/
 	OnCollision() {};
-	DamageType damagetype;
-	float damage;
+	Damage damage;
 	std::vector<Condition> conditions;
 };

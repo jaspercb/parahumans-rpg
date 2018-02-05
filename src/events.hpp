@@ -33,11 +33,10 @@ struct CollidedEvent {
 };
 
 struct DamagedEvent {
-	DamagedEvent(Entity source, Entity damaged, DamageType type, float damage)
-		: source(source), damaged(damaged), type(type), damage(damage) {}
-	Entity source, damaged;
-	DamageType type;
-	float damage;
+	DamagedEvent(Entity source, Entity target, Damage damage)
+		: source(source), target(target), damage(damage) {}
+	Entity source, target;
+	Damage damage;
 };
 
 struct WindowExitEvent {

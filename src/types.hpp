@@ -147,14 +147,19 @@ public:
 	T value, min, max;
 };
 
-enum DamageType {
-	Puncture,
-	Slash,
-	Impact,
-	Heat,
-	Cold,
-	Electricity,
-	Toxin
+struct Damage {
+	enum Type {
+		Puncture,
+		Slash,
+		Impact,
+		Heat,
+		Cold,
+		Electricity,
+		Toxin
+	};
+
+	Type type;
+	float amount;
 };
 
 struct Condition {

@@ -231,11 +231,11 @@ DestructibleSystem::DestructibleSystem() {}
 
 void DestructibleSystem::receive(const DamagedEvent &e) {
 	// TODO: Pay attention to damage types, source
-	std::cout<<"damaged"<<e.damage<<std::endl;
-	if (!world->registry.has<Destructible>(e.damaged)) return;
-	auto &destructible = world->registry.get<Destructible>(e.damaged);
+	std::cout<<"damaged "<<e.damage.amount<<std::endl;
+	if (!world->registry.has<Destructible>(e.target)) return;
+	auto &destructible = world->registry.get<Destructible>(e.target);
 	if (!destructible.indestructible) {
-		destructible.HP -= e.damage;
+		destructible.HP -= e.damage.amount;
 	}
 }
 
@@ -261,7 +261,7 @@ void InputSystem::receive(const SDL_Event& e) {
 	Ability fireball;
 	ProjectileTemplate fireball_template;
 	fireball_template.oncollision = new OnCollision();
-	fireball_template.oncollision->damage = 5;
+	fireball_template.oncollision->damage = {Damage::Type::Heat, 5};
 	fireball_template.renderable = new Renderable();
 	fireball_template.projectile_speed = 50;
 	fireball.projectile_template = fireball_template;
@@ -354,7 +354,7 @@ void ConditionSystem::tickCondition(Entity entity, Condition& condition, TimeDel
 	case Condition::Type::BURN: // damage
 	case Condition::Type::BLEED: // damage
 	case Condition::Type::POISON: // damage
-		world->bus.publish<DamagedEvent>(entity, entity, DamageType::Puncture, condition.strength * dt);
+		world->bus.publish<DamagedEvent>(entity, entity, Damage{Damage::Type::Puncture, condition.strength * dt});
 		break;
 	default:
 		break;
@@ -391,8 +391,8 @@ void CollisionHandlerSystem::handle(Entity source, Entity target) {
 		for (const auto &condition : oncollision.conditions) {
 			world->bus.publish<ConditionEvent>(condition, source, target);
 		}
-		if (oncollision.damage) {
-			world->bus.publish<DamagedEvent>(source, target, oncollision.damagetype, oncollision.damage);
+		if (oncollision.damage.amount) {
+			world->bus.publish<DamagedEvent>(source, target, oncollision.damage);
 		}
 	}
 }
