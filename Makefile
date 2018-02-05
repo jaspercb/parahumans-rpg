@@ -16,7 +16,7 @@ SOURCES := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT) -not -name "*main.cp
 OBJECTS := $(patsubst $(SRCDIR)/%, $(BUILDDIR)/%, $(SOURCES:.$(SRCEXT)=.o))
 TESTSOURCES := $(shell find $(TESTDIR) -type f -name *.$(SRCEXT) -not -name "*tester.cpp")
 TESTOBJECTS := $(patsubst $(TESTDIR)/%, $(BUILDDIR)/test/%, $(TESTSOURCES:.$(SRCEXT)=.o))
-CFLAGS := -std=c++17 -g -O1 -Wall
+CFLAGS := -std=c++17 -g -O1 -Wall -Wno-narrowing
 LIB := -lSDL2
 TESTLIBS :=  -lgtest -lgtest_main -lpthread
 INC := -I include -I lib

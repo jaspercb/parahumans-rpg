@@ -165,10 +165,10 @@ struct Condition {
 	};
 	enum Type {
 		BURN,
-		// FREEZE,
+		// FREEZE, // TODO
 		BLEED,
 		POISON,
-		// STUN,
+		// STUN,   // TODO
 		MOD_SPEED,
 		MOD_ACCEL
 	};
@@ -195,29 +195,23 @@ struct Condition {
 	bool operator<(const Condition& other) const {return priority < other.priority;}
 };
 
-struct OnCollision {
-	/* 
-	A component storing behavioral data about what to do upon colliding.
-	*/
-	OnCollision() {};
-	DamageType damagetype;
-	float damage;
-	std::vector<Condition> conditions;
-};
-
 struct Renderable;
+struct OnCollision;
 
 struct ProjectileTemplate {
 	float projectile_speed;
 	OnCollision* oncollision;
 	Renderable* renderable;
-	// float n_collisions; // collisions until projectile ends
-	// lifetime
+	// TODO: limit number of projectile collisions before deletion
+	// TODO: toggle whether repeat collisions are legal
+	// TODO: limit projectile lifetime
 };
 
 struct Ability {
 	enum Type {
 		FireProjectile,
+		// ExplosionOnTarget, // TODO
+		// TeleportToTarget,  // TODO
 		SelfCondition
 	};
 	Type type;
@@ -230,3 +224,5 @@ struct Ability {
 
 	bool isOffCooldown() const { return timeSinceUsed >= cooldown; }
 };
+
+// TODO: Damage utility struct, bundling type and amount

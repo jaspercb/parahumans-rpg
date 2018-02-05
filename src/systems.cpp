@@ -192,6 +192,7 @@ bool CollisionSystem::_collides(const SpatialData &spatial1,
 }
 
 // TODO: listen to EntityCreated and EntityDestroyed?
+// TODO: CollisionSystem should not check collisions on each move event (can generate duplicate collision events per frame)
 
 void CollisionSystem::receive(const MovedEvent &e) {
 	auto oldPos = e.oldPos;
@@ -350,10 +351,12 @@ void ConditionSystem::update(TimeDelta dt) {
 
 void ConditionSystem::tickCondition(Entity entity, Condition& condition, TimeDelta dt) {
 	switch (condition.type) {
-		case Condition::Type::BURN: // damage
-		case Condition::Type::BLEED: // damage
-		case Condition::Type::POISON: // damage
+	case Condition::Type::BURN: // damage
+	case Condition::Type::BLEED: // damage
+	case Condition::Type::POISON: // damage
 		world->bus.publish<DamagedEvent>(entity, entity, DamageType::Puncture, condition.strength * dt);
+		break;
+	default:
 		break;
 	}
 	condition.timeLeft -= dt;
@@ -411,10 +414,7 @@ void ControlSystem::receive(const Control_MoveAccelEvent& e) {
 }
 
 void ControlSystem::receive(const Control_UseAbilityEvent& e) {
-	std::cout<<"a"<<std::endl;
 	if (!e.ability->isOffCooldown()) return;
-	std::cout<<"b"<<std::endl;
-	SpatialData& abilities = world->registry.get<SpatialData>(e.entity);
 	switch(e.ability->type) {
 	case Ability::Type::FireProjectile: {
 		const ProjectileTemplate& templat = e.ability->projectile_template;

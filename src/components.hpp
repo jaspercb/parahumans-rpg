@@ -127,3 +127,13 @@ struct Controllable {
 struct AbilityData {
 	std::vector<Ability> abilities;
 };
+
+struct OnCollision {
+	/* 
+	A component storing behavioral data about what to do upon colliding.
+	*/
+	OnCollision() {};
+	DamageType damagetype;
+	float damage;
+	std::vector<Condition> conditions;
+};

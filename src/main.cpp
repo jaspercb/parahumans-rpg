@@ -61,7 +61,7 @@ public:
 		for (int x=0; x<20; x++) {
 		for (int y=0; y<20; y++) {
 			auto entity = world.registry.create();
-			world.registry.assign<SpatialData>(entity, vec2f{50*x, 50*y}, vec2f{0, 0}, -50.0);
+			world.registry.assign<SpatialData>(entity, vec2f{50.0*x, 50.0*y}, vec2f{0, 0}, -50.0);
 			world.registry.assign<Renderable>(entity, Renderable::Type::Cube);
 			}
 		}
@@ -113,7 +113,6 @@ private:
 
 int main(int argc, char* args[]) {
 	SDL_Window* window = NULL;
-	SDL_Surface* screenSurface = NULL;
 	if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
 		fprintf(stderr, "Could not initialize sdl2: %s\n", SDL_GetError());
 		return 1;
