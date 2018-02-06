@@ -231,11 +231,20 @@ DestructibleSystem::DestructibleSystem() {}
 
 void DestructibleSystem::receive(const DamagedEvent &e) {
 	// TODO: Pay attention to damage types, source
-	std::cout<<"damaged "<<e.damage.amount<<std::endl;
+	std::cout<<"DestructibleSystem::receive(DamagedEvent), amount="<<e.damage.amount<<std::endl;
 	if (!world->registry.has<Destructible>(e.target)) return;
 	auto &destructible = world->registry.get<Destructible>(e.target);
 	if (!destructible.indestructible) {
 		destructible.HP -= e.damage.amount;
+	}
+}
+
+void DestructibleSystem::receive(const HealedEvent &e) {
+	std::cout<<"DestructibleSystem::receive(HealedEvent), amount="<<e.amount<<std::endl;
+	if (!world->registry.has<Destructible>(e.target)) return;
+	auto &destructible = world->registry.get<Destructible>(e.target);
+	if (destructible.healable) {
+		destructible.HP += e.amount;
 	}
 }
 
@@ -327,24 +336,32 @@ void InputSystem::update(TimeDelta dt) {
 }
 
 void ConditionSystem::receive(const ConditionEvent& e) {
-	auto &stats = world->registry.get<Stats>(e.receiver);
-	auto &conditions = world->registry.get<Conditions>(e.receiver);
-	conditions.list.push_front(e.condition);
-	stats.dirty = true;
+	if (world->registry.has<Stats>(e.receiver)) {
+		auto &stats = world->registry.get<Stats>(e.receiver);
+		stats.dirty = true;
+	}
+	if (world->registry.has<Conditions>(e.receiver)) {
+		auto &conditions = world->registry.get<Conditions>(e.receiver);
+		conditions.push_front(e.condition);
+	}
 };
 
 void ConditionSystem::update(TimeDelta dt) {
-	world->registry.view<Conditions, Stats>().each([dt, this](auto entity, auto &conditions, auto &stats) {
-		for (auto condition = conditions.list.begin(); condition != conditions.list.end(); condition++) {
+	world->registry.view<Conditions>().each([dt, this](auto entity, auto &conditions) {
+		Stats* stats = world->registry.has<Stats>(entity) ? &world->registry.get<Stats>(entity) : nullptr;
+		bool conditionExpired = false;
+		for (auto condition = conditions.begin(); condition != conditions.end(); condition++) {
 			if (condition->isExpired()) {
-				condition = conditions.list.erase(condition);
-				stats.dirty = true;
+				condition = conditions.erase(condition);
+				conditionExpired = true;
 			} else {
-				tickCondition(entity, *condition, dt);
+				tickCondition(entity, *condition, std::min(condition->timeLeft, dt));
 			}
 		}
-		if (stats.dirty) {
-			recalculateStats(stats, conditions);
+		if (stats) {
+			if (conditionExpired || stats->dirty) {
+				recalculateStats(*stats, conditions);
+			}
 		}
 	});
 }
@@ -356,6 +373,9 @@ void ConditionSystem::tickCondition(Entity entity, Condition& condition, TimeDel
 	case Condition::Type::POISON: // damage
 		world->bus.publish<DamagedEvent>(entity, entity, Damage{Damage::Type::Puncture, condition.strength * dt});
 		break;
+	case Condition::Type::REGEN: // damage
+		world->bus.publish<HealedEvent>(entity, entity, condition.strength * dt);
+		break;
 	default:
 		break;
 	}
@@ -364,16 +384,18 @@ void ConditionSystem::tickCondition(Entity entity, Condition& condition, TimeDel
 
 void ConditionSystem::recalculateStats(Stats &stats, Conditions &conditions) {
 	memcpy(&stats.stats, &stats.basestats, sizeof(stats.stats));
-	conditions.list.sort();
-	for (const auto &condition : conditions.list) {
+	conditions.sort();
+	for (const auto &condition : conditions) {
 		float* var = nullptr;
 		switch (condition.type) {
 			case Condition::Type::MOD_SPEED: var = &stats.stats.speed; break;
 			case Condition::Type::MOD_ACCEL: var = &stats.stats.accel; break;
+			default: continue;
 		}
 		switch (condition.priority) {
 			case Condition::Priority::Adder: *var += condition.strength; break;
 			case Condition::Priority::Multiplier: *var *= condition.strength; break;
+			default: continue;
 		}
 	}
 	stats.dirty = false;

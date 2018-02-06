@@ -84,9 +84,7 @@ public:
 	float accel() const { return stats.accel; }
 };
 
-struct Conditions {
-	std::list<Condition> list;
-};
+struct Conditions : public std::list<Condition> {};
 
 struct Collidable {
 	enum Type {
@@ -113,11 +111,11 @@ struct Collidable {
 };
 
 struct Destructible {
-	Destructible(HPType maxHP, bool indestructible=false)
-		: HP(maxHP, 0, maxHP), indestructible(indestructible)
+	Destructible(HPType maxHP, bool indestructible=false, bool healable=true)
+		: HP(maxHP, 0, maxHP), indestructible(indestructible), healable(healable)
 		{}
 	BoundedQuantity<HPType> HP;
-	bool indestructible;
+	bool indestructible, healable;
 };
 
 struct Controllable {

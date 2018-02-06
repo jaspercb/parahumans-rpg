@@ -90,6 +90,7 @@ class DestructibleSystem : public System {
 public:
 	DestructibleSystem();
 	void receive(const DamagedEvent &e);
+	void receive(const 	HealedEvent &e);
 	void update(TimeDelta dt) override;
 };
 

@@ -39,6 +39,13 @@ struct DamagedEvent {
 	Damage damage;
 };
 
+struct HealedEvent {
+	HealedEvent(Entity source, Entity target, float amount)
+		: source(source), target(target), amount(amount) {}
+	Entity source, target;
+	float amount;
+};
+
 struct WindowExitEvent {
 	WindowExitEvent() {}
 };

@@ -174,6 +174,7 @@ struct Condition {
 		BLEED,
 		POISON,
 		// STUN,   // TODO
+		REGEN,
 		MOD_SPEED,
 		MOD_ACCEL
 	};
@@ -181,7 +182,8 @@ struct Condition {
 	Priority priority;
 	Type type;
 	/* Condition strength means different things for different conditions.
-	   BURN/BLEED/POISON:    damage/second
+	   BURN/BLEED/POISON:    damage in HP/second
+	   REGEN:                heal in HP/second
 	   MOD_SPEED, MOD_ACCEL: amount to add/multiply by based on priority */
 	float strength;
 	TimeDelta timeLeft;
@@ -197,6 +199,8 @@ struct Condition {
 			case Type::BLEED:
 			case Type::POISON:
 			return false;
+			case Type::REGEN:
+			return true;
 			case Type::MOD_SPEED:
 			case Type::MOD_ACCEL:
 			return (priority == Priority::Multiplier) ? strength > 1 : strength > 0;
