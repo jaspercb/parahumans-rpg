@@ -26,7 +26,7 @@ void renderOvalOffset(SDL_Renderer* renderer, const ViewTransform* view, vec2i i
 	const float scale = view->scale;
 	offset.rotate(angle);
 
-	vec2i screenpos = ipos + view->viewCoordFromGlobal(offset);
+	vec2i screenpos = ipos + view->viewCoordFromGlobal(offset) - view->viewCoordFromGlobal(vec2f{0, 0});
 	filledEllipseColor(renderer, screenpos.x, screenpos.y - scale*height, int(rx*scale), int(ry*scale), SDL_ColortoUint32(color));
 	ellipseColor(renderer, screenpos.x, screenpos.y - scale*height, int(rx*scale), int(ry*scale), SDL_ColortoUint32(SDL_Colors::BLACK));
 }
@@ -156,6 +156,16 @@ void RenderSystem::update(TimeDelta dt) {
 	timeSinceStart += dt;
 };
 
+void CameraTrackingSystem::update(TimeDelta dt) {
+	// Update center point
+	const static float VELOCITY_WEIGHTING = 0.5;
+	const static float CATCHUP_SPEED = 0.07;
+	Entity attachee = world->registry.attachee<CameraFocus>();
+	const auto& spatial = world->registry.get<SpatialData>(attachee); 
+	vec2f diff = spatial.position + VELOCITY_WEIGHTING * spatial.velocity - _viewxform->viewcenter;
+	_viewxform->viewcenter += CATCHUP_SPEED * diff;
+}
+
 CollisionSystem::CollisionSystem(int gridwidth)
 	: gridwidth(gridwidth)
 {}
@@ -272,7 +282,7 @@ void InputSystem::receive(const SDL_Event& e) {
 	fireball_template.oncollision = new OnCollision();
 	fireball_template.oncollision->damage = {Damage::Type::Heat, 5};
 	fireball_template.renderable = new Renderable();
-	fireball_template.projectile_speed = 50;
+	fireball_template.projectile_speed = 500;
 	fireball.projectile_template = fireball_template;
 	fireball.type = Ability::Type::FireProjectile;
 	fireball.cooldown = 0;

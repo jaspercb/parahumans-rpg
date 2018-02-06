@@ -134,3 +134,5 @@ struct OnCollision {
 	Damage damage;
 	std::vector<Condition> conditions;
 };
+
+struct CameraFocus {};

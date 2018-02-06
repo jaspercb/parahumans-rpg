@@ -36,6 +36,7 @@ public:
 		world.addSystem(std::make_shared<ConditionSystem>());
 		world.addSystem(std::make_shared<CollisionHandlerSystem>());
 		world.addSystem(std::make_shared<AbilitySystem>());
+		world.addSystem(std::make_shared<CameraTrackingSystem>(&viewxform));
 
 		for (int i=0; i<1; i++) {
 			auto entity = world.registry.create();
@@ -47,6 +48,7 @@ public:
 			world.bus.publish<CollidableCreatedEvent>(entity);
 			world.registry.assign<Conditions>(entity);
 			world.registry.assign<Stats>(entity, 133 /*movespeed*/, 40 /*accel*/);
+			world.registry.attach<CameraFocus>(entity);
 		}
 		for (int i=0; i<8; i++) {
 			auto entity = world.registry.create();

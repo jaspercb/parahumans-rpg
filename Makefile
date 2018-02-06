@@ -27,6 +27,7 @@ bin/client: $(OBJECTS)
 $(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
 	@mkdir -p $(BUILDDIR)
 	@mkdir -p $(BUILDDIR)/gfx
+	@mkdir -p $(BUILDDIR)/FastNoise
 	@echo "    Compiling  $(ccbold)$<$(ccend)"; $(CC) $(CFLAGS) $(INC) -c -o $@ $<;
 
 $(BUILDDIR)/test/%.o: $(TESTDIR)/%.$(SRCEXT)

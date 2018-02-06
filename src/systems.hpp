@@ -62,12 +62,22 @@ public:
 		  timeSinceStart(0.0),
 		  _viewxform(viewxform) {};
 	void renderEntity(Entity entity);
-
 	void update(TimeDelta dt) override;
 private:
 	SDL_Renderer* _renderer;
 	TimeDelta timeSinceStart;
 	const ViewTransform* _viewxform;
+};
+
+struct CameraTrackingSystem : public System {
+// Responsible for making the camera track the player
+// TODO: screen shake
+public:
+	CameraTrackingSystem(ViewTransform* viewxform)
+		: _viewxform(viewxform) {}
+	void update(TimeDelta dt) override;
+private:
+	ViewTransform* _viewxform;
 };
 
 struct CollisionSystem : public System {
@@ -90,7 +100,7 @@ class DestructibleSystem : public System {
 public:
 	DestructibleSystem();
 	void receive(const DamagedEvent &e);
-	void receive(const 	HealedEvent &e);
+	void receive(const HealedEvent &e);
 	void update(TimeDelta dt) override;
 };
 
