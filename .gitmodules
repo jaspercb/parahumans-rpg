@@ -1,0 +1,3 @@
+[submodule "src/FastNoise"]
+	path = src/FastNoise
+	url = https://github.com/Auburns/FastNoise
