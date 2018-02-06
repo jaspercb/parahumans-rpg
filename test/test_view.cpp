@@ -4,25 +4,25 @@
 #include "../src/systems.hpp"
 
 namespace {
-class ViewTest : public ::testing::Test {
+class ViewTransformTest : public ::testing::Test {
  protected:
   virtual void SetUp() {
     // Code here will be called immediately after the constructor (right
     // before each test).
-  	view = View();
+  	view = ViewTransform();
     view.scale = 1;
     view.viewcenter = {0, 0};
   }
 
-  View view;
+  ViewTransform view;
 };
 
-TEST_F(ViewTest, ZeroSanityCheck) {
+TEST_F(ViewTransformTest, ZeroSanityCheck) {
   vec2f zero = {0, 0};
   EXPECT_EQ(zero, view.viewCoordFromGlobal(zero));
 }
 
-TEST_F(ViewTest, InverseTransform) {
+TEST_F(ViewTransformTest, InverseTransform) {
   static vec2f vectors[3] = {{1, 3}, {100, 700}, {-200, 1400}};
   for (auto &a : vectors) {
     for (auto &b : vectors) {
