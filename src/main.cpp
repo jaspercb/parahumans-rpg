@@ -58,6 +58,7 @@ public:
 			world.registry.assign<Stats>(entity, 0, 0);
 		}
 		// floor
+		/*
 		for (int x=0; x<20; x++) {
 		for (int y=0; y<20; y++) {
 			auto entity = world.registry.create();
@@ -65,6 +66,7 @@ public:
 			world.registry.assign<Renderable>(entity, Renderable::Type::Cube);
 			}
 		}
+		*/
 		lastFrameTimeMilliseconds = SDL_GetTicks();
 	}
 
@@ -77,10 +79,15 @@ public:
 		world.bus.reg(sharedptr);
 	}
 
+	void close() {
+		SDL_DestroyRenderer(renderer);
+		SDL_DestroyWindow(window);
+	}
+
 	void update() {
 		int currentFrameTimeMilliseconds = SDL_GetTicks();
 		TimeDelta timePassedSeconds = (currentFrameTimeMilliseconds - lastFrameTimeMilliseconds) / 1000.0;
-
+		timePassedSeconds = 0.03;
 		world.update_all(timePassedSeconds);
 
 		lastFrameTimeMilliseconds = currentFrameTimeMilliseconds;
@@ -132,6 +139,7 @@ int main(int argc, char* args[]) {
 	auto app = std::make_shared<ClientApplication>(window);
 	app->init(app);
 	app->run();
+	app->close();
 	SDL_Quit();
 	return 0;
 }

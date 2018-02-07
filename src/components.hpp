@@ -96,13 +96,14 @@ struct Collidable {
 			float circle_radius;
 		};
 	};
+	int collisionsUntilDestroyed; // -1 means "never delete this"
 	std::unordered_set<Entity> ignored;
 
-	Collidable(Type type, float arg1)
-		: type(type), circle_radius(arg1) {}
+	Collidable(Type type, float arg1, int collisionsUntilDestroyed=-1)
+		: type(type), circle_radius(arg1), collisionsUntilDestroyed(collisionsUntilDestroyed) {}
 
 	bool canCollide(Entity other) const {
-		return ignored.find(other) == ignored.end();
+		return collisionsUntilDestroyed != 0 && ignored.find(other) == ignored.end();
 	}
 
 	void addIgnored(Entity other) {

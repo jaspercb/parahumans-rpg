@@ -209,14 +209,15 @@ struct Condition {
 	bool operator<(const Condition& other) const {return priority < other.priority;}
 };
 
-struct Renderable;
+class Collidable;
 struct OnCollision;
+struct Renderable;
 
 struct ProjectileTemplate {
 	float projectile_speed;
+	Collidable* collidable;
 	OnCollision* oncollision;
 	Renderable* renderable;
-	// TODO: limit number of projectile collisions before deletion
 	// TODO: toggle whether repeat collisions are legal
 	// TODO: limit projectile lifetime
 };

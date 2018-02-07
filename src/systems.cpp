@@ -32,6 +32,7 @@ void renderOvalOffset(SDL_Renderer* renderer, const ViewTransform* view, vec2i i
 }
 
 void RenderSystem::renderEntity(Entity entity) {
+	if (!world->registry.valid(entity)) return;
 	const auto &sdata = world->registry.get<SpatialData>(entity);
 	const auto &renderable = world->registry.get<Renderable>(entity);
 	vec2f fpos = _viewxform->screenCoordFromGlobal(sdata.position);
@@ -131,9 +132,8 @@ void RenderSystem::renderEntity(Entity entity) {
 
 void RenderSystem::update(TimeDelta dt) {
 	// Fill screen with white
-	SDL_Renderer* renderer = _renderer;
 	SDL_SetRenderDrawColor(_renderer, 255, 255, 255, 255); // white
-	SDL_RenderClear(renderer);
+	SDL_RenderClear(_renderer);
 
 	// distance from camera -> renderable
 	std::multimap<float, Entity> drawqueue;
@@ -148,11 +148,14 @@ void RenderSystem::update(TimeDelta dt) {
 				drawqueue.emplace(sdata.position.x + sdata.position.y + sdata.z, entity);
 		}
 	});
+	std::cout<<std::endl;
 	for (auto& pair : drawqueue) {
 		auto entity = pair.second;
+		std::cout<< "RenderSystem rendering: "<<entity<<std::endl;
 		renderEntity(entity);
 	}
-	SDL_RenderPresent(renderer);
+	std::cout<<std::endl;
+	SDL_RenderPresent(_renderer);
 	timeSinceStart += dt;
 };
 
@@ -201,8 +204,6 @@ bool CollisionSystem::_collides(const SpatialData &spatial1,
 	return false;
 }
 
-// TODO: remove when EntityDestroyed?
-
 void CollisionSystem::receive(const MovedEvent &e) {
 	auto oldGridCoords = getGridCoords(e.oldPos);
 	auto newGridCoords = getGridCoords(e.newPos);
@@ -223,7 +224,6 @@ void CollisionSystem::receive(const EntityDestroyedEvent &e) {
 
 void CollisionSystem::update(TimeDelta dt) {
 	// add all relevant things to the collision map
-
 	world->registry.view<SpatialData, Collidable>().each([this](auto entity, const auto &spatial, const auto &collidable) {
 		if (!isWatching(entity)) {
 			auto gridCoords = getGridCoords(spatial.position);
@@ -232,30 +232,53 @@ void CollisionSystem::update(TimeDelta dt) {
 		}
 	});
 
-	// generates all collisions
-	const static vec2i dd[5] = {{0, 0}, {0, 1}, {1, -1}, {1, 0}, {1, 1}};
+	std::unordered_set<Entity> destroyed;
+	auto checkAndHandleCollisions = [this, &destroyed](Entity e1, Entity e2) {
+		if (collides(e1, e2)) {
+			assert(e1 != e2);
+			auto& collide1 = world->registry.get<Collidable>(e1);
+			auto& collide2 = world->registry.get<Collidable>(e2);
+			if (collide1.canCollide(e2) && collide2.canCollide(e1)) {
+				world->bus.publish<CollidedEvent>(e1, e2);
+				collide1.collisionsUntilDestroyed = std::max(-1, collide1.collisionsUntilDestroyed-1);
+				collide2.collisionsUntilDestroyed = std::max(-1, collide2.collisionsUntilDestroyed-1);
+				if (collide1.collisionsUntilDestroyed == 0)
+					destroyed.insert(e1);
+				if (collide2.collisionsUntilDestroyed == 0)
+					destroyed.insert(e2);
+			}
+		}
+	};
 
+	// generate all collisions
+	const static vec2i dd[4] = {{0, 1}, {1, -1}, {1, 0}, {1, 1}};
 	for (const auto& pair: mSpatialHash ) {
 		const auto& gridCoords = pair.first;
 		const auto& entities = pair.second;
 		if (entities.size() == 0) continue;
-		for (int i=0; i<5; i++) {
-			vec2i d = dd[i];
+		// check within the cell
+		for (auto a = entities.cbegin(); a != entities.cend(); a++) {
+			for (auto b = std::next(a, 1); b != entities.cend(); b++) {
+				checkAndHandleCollisions(*a, *b);
+			}
+		}
+
+		// check neighboring cells
+		for (int i=0; i<4; i++) {
+			const vec2i d = dd[i];
 			auto iter = mSpatialHash.find(gridCoords + d);
 			if (iter != mSpatialHash.end()) {
 				for (const auto &e1 : entities) {
 					for (const auto &e2 : iter->second) {
-						if (collides(e1, e2)) {
-							auto collide1 = world->registry.get<Collidable>(e1);
-							auto collide2 = world->registry.get<Collidable>(e2);
-							if (collide1.canCollide(e2) && collide2.canCollide(e1)) {
-								world->bus.publish<CollidedEvent>(e1, e2);
-							}
-						}
+						checkAndHandleCollisions(e1, e2);
 					}
 				}
 			}
 		}
+	}
+	for (auto entity : destroyed) {
+		std::cout<<"destroyed "<<entity<<std::endl;
+		world->destroy(entity);
 	}
 }
 
@@ -289,14 +312,17 @@ void InputSystem::receive(const SDL_Event& e) {
 	speedup.type = Ability::Type::SelfCondition;
 	speedup.cooldown = 0;
 	speedup.condition = {Condition::Priority::Multiplier, Condition::Type::MOD_SPEED, 2, 1 /* seconds */};
+	speedup.timeSinceUsed = 0;
 
 	Ability accelup;
 	accelup.type = Ability::Type::SelfCondition;
 	accelup.cooldown = 0;
 	accelup.condition = {Condition::Priority::Multiplier, Condition::Type::MOD_ACCEL, 2, 1};
+	accelup.timeSinceUsed = 0;
 
 	Ability fireball;
 	ProjectileTemplate fireball_template;
+	fireball_template.collidable = new Collidable{Collidable::Circle, 10, 1 /* collisions until destroyed */};
 	fireball_template.oncollision = new OnCollision();
 	fireball_template.oncollision->damage = {Damage::Type::Heat, 5};
 	fireball_template.renderable = new Renderable();
@@ -304,6 +330,7 @@ void InputSystem::receive(const SDL_Event& e) {
 	fireball.projectile_template = fireball_template;
 	fireball.type = Ability::Type::FireProjectile;
 	fireball.cooldown = 0;
+	fireball.timeSinceUsed = 0;
 	// Condition burn = {Condition::Priority::None, Condition::Type::BURN, 10, 200000000};
 
 	switch(e.type) {
@@ -327,6 +354,7 @@ void InputSystem::receive(const SDL_Event& e) {
 
 	delete fireball_template.oncollision;
 	delete fireball_template.renderable;
+	delete fireball_template.collidable;
 }
 
 void InputSystem::update(TimeDelta dt) {
@@ -464,6 +492,7 @@ void ControlSystem::receive(const Control_MoveAccelEvent& e) {
 }
 
 void ControlSystem::receive(const Control_UseAbilityEvent& e) {
+	std::cout<<"ControlSystem::receive(UseAbilityEvent)"<<std::endl;
 	if (!e.ability->isOffCooldown()) return;
 	switch(e.ability->type) {
 	case Ability::Type::FireProjectile: {
@@ -477,12 +506,14 @@ void ControlSystem::receive(const Control_UseAbilityEvent& e) {
 			world->registry.assign<Renderable>(projectile, *templat.renderable);
 		if (templat.oncollision)
 			world->registry.assign<OnCollision>(projectile, *templat.oncollision);
-		auto& collidable = world->registry.assign<Collidable>(projectile, Collidable::Circle, 10);
-		collidable.addIgnored(e.entity);
+		if (templat.collidable) {
+			auto& collidable = world->registry.assign<Collidable>(projectile, *templat.collidable);
+			collidable.addIgnored(e.entity);
+		}
+		std::cout<<"ControlSystem created projectile, id="<<projectile<<std::endl;
 		}
 		break;
 	case Ability::Type::SelfCondition:
-		std::cout<<"c"<<std::endl;
 		world->bus.publish<ConditionEvent>(e.ability->condition, e.entity, e.entity);
 		break;
 	}

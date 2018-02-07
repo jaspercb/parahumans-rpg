@@ -8,11 +8,20 @@ namespace {
 
 class Receiver {
 public:
-	Receiver() : callcount(0) {}
-	void receive(const CollidedEvent &e) {
-		callcount += 1;
-	}
-	int callcount;
+  Receiver() : callcount(0) {}
+  void receive(const CollidedEvent &e) {
+    callcount += 1;
+  }
+  int callcount;
+};
+
+class EntityDestroyedReceiver {
+public:
+  EntityDestroyedReceiver() : callcount(0) {}
+  void receive(const EntityDestroyedEvent &e) {
+    callcount += 1;
+  }
+  int callcount;
 };
 
 class CollisionSystemTest : public ::testing::Test {
@@ -86,6 +95,23 @@ TEST_F(CollisionSystemTest, NoCollisionAfterEntityDestroyed) {
 
   collisionsystem->update(0.0);
   EXPECT_EQ(0, receiver->callcount);
+}
+
+TEST_F(CollisionSystemTest, EntityDestroyedOnCollision) {
+  auto one = world.registry.create();
+  world.registry.assign<SpatialData>(one, vec2f{0, 0});
+  world.registry.assign<Collidable>(one, Collidable::Circle, 10, 1);
+
+  auto two = world.registry.create();
+  world.registry.assign<SpatialData>(two, vec2f{5, -5});
+  world.registry.assign<Collidable>(two, Collidable::Circle, 20);
+
+  auto receiver = std::make_shared<EntityDestroyedReceiver>();
+  world.bus.reg(receiver);
+
+  collisionsystem->update(0.0);
+  collisionsystem->update(0.0);
+  EXPECT_EQ(1, receiver->callcount);
 }
 
 TEST_F(CollisionSystemTest, NoEventIfCollisionIgnored) {
