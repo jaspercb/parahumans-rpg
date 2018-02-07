@@ -170,7 +170,7 @@ CollisionSystem::CollisionSystem(int gridwidth)
 	: gridwidth(gridwidth)
 {}
 
-bool CollisionSystem::collides(Entity one, Entity two) {
+bool CollisionSystem::collides(Entity one, Entity two) const {
 	if (one == two) return false;
 	if (!world->registry.has<SpatialData>(one)
 	 || !world->registry.has<Collidable>(one)
@@ -201,28 +201,56 @@ bool CollisionSystem::_collides(const SpatialData &spatial1,
 	return false;
 }
 
-// TODO: listen to EntityCreated and EntityDestroyed?
-// TODO: CollisionSystem should not check collisions on each move event (can generate duplicate collision events per frame)
+// TODO: remove when EntityDestroyed?
 
 void CollisionSystem::receive(const MovedEvent &e) {
-	auto oldPos = e.oldPos;
-	auto oldGridCoords = getGridCoords(oldPos);
+	auto oldGridCoords = getGridCoords(e.oldPos);
 	auto newGridCoords = getGridCoords(e.newPos);
 	if (oldGridCoords != newGridCoords) {
-		spatial_hash[oldGridCoords].erase(e.entity);
-		spatial_hash[newGridCoords].insert(e.entity);
+		mSpatialHash[oldGridCoords].erase(e.entity);
+		mSpatialHash[newGridCoords].insert(e.entity);
+		mGridCoords[e.entity] = newGridCoords;
 	}
-	for (int dx=-1; dx<=1; dx++) {
-		for (int dy=-1; dy<=1; dy++) {
-			vec2i d = {dx, dy};
-			auto iter = spatial_hash.find(newGridCoords + d);
-			if (iter != spatial_hash.end()) {
-				for (const auto &entity : iter->second) {
-					if (collides(e.entity, entity)) {
-						auto collide1 = world->registry.get<Collidable>(e.entity);
-						auto collide2 = world->registry.get<Collidable>(entity);
-						if (collide1.canCollide(entity) && collide2.canCollide(e.entity)) {
-							world->bus.publish<CollidedEvent>(e.entity, entity);
+}
+
+void CollisionSystem::receive(const EntityDestroyedEvent &e) {
+	if (isWatching(e.entity)) {
+		const auto gridCoords = mGridCoords[e.entity];
+		mSpatialHash[gridCoords].erase(e.entity);
+		mGridCoords.erase(e.entity);
+	}
+}
+
+void CollisionSystem::update(TimeDelta dt) {
+	// add all relevant things to the collision map
+
+	world->registry.view<SpatialData, Collidable>().each([this](auto entity, const auto &spatial, const auto &collidable) {
+		if (!isWatching(entity)) {
+			auto gridCoords = getGridCoords(spatial.position);
+			mSpatialHash[gridCoords].insert(entity);
+			mGridCoords[entity] = gridCoords;
+		}
+	});
+
+	// generates all collisions
+	const static vec2i dd[5] = {{0, 0}, {0, 1}, {1, -1}, {1, 0}, {1, 1}};
+
+	for (const auto& pair: mSpatialHash ) {
+		const auto& gridCoords = pair.first;
+		const auto& entities = pair.second;
+		if (entities.size() == 0) continue;
+		for (int i=0; i<5; i++) {
+			vec2i d = dd[i];
+			auto iter = mSpatialHash.find(gridCoords + d);
+			if (iter != mSpatialHash.end()) {
+				for (const auto &e1 : entities) {
+					for (const auto &e2 : iter->second) {
+						if (collides(e1, e2)) {
+							auto collide1 = world->registry.get<Collidable>(e1);
+							auto collide2 = world->registry.get<Collidable>(e2);
+							if (collide1.canCollide(e2) && collide2.canCollide(e1)) {
+								world->bus.publish<CollidedEvent>(e1, e2);
+							}
 						}
 					}
 				}
@@ -230,14 +258,6 @@ void CollisionSystem::receive(const MovedEvent &e) {
 		}
 	}
 }
-
-void CollisionSystem::receive(const CollidableCreatedEvent& e) {
-	const auto& sdata = world->registry.get<SpatialData>(e.entity);
-	auto coords = getGridCoords(sdata.position);
-	spatial_hash[coords].insert(e.entity);
-}
-
-DestructibleSystem::DestructibleSystem() {}
 
 void DestructibleSystem::receive(const DamagedEvent &e) {
 	// TODO: Pay attention to damage types, source
@@ -257,8 +277,6 @@ void DestructibleSystem::receive(const HealedEvent &e) {
 		destructible.HP += e.amount;
 	}
 }
-
-void DestructibleSystem::update(TimeDelta dt) {}
 
 vec2f InputSystem::getMouseGlobalCoords() const {
 	vec2i screenpos;
@@ -460,7 +478,6 @@ void ControlSystem::receive(const Control_UseAbilityEvent& e) {
 		if (templat.oncollision)
 			world->registry.assign<OnCollision>(projectile, *templat.oncollision);
 		auto& collidable = world->registry.assign<Collidable>(projectile, Collidable::Circle, 10);
-		world->bus.publish<CollidableCreatedEvent>(projectile);
 		collidable.addIgnored(e.entity);
 		}
 		break;

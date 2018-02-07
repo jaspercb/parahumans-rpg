@@ -65,9 +65,27 @@ TEST_F(CollisionSystemTest, CollisionTriggersCollideEvent) {
 
   auto receiver = std::make_shared<Receiver>();
   world.bus.reg(receiver);
-  world.bus.publish<MovedEvent>(two, vec2f{-10e10, -10e10}, vec2f{5, -5});
-  world.bus.publish<MovedEvent>(one, vec2f{-10e10, -10e10}, vec2f{0, 0});
+
+  collisionsystem->update(0.0);
   EXPECT_EQ(1, receiver->callcount);
+}
+
+TEST_F(CollisionSystemTest, NoCollisionAfterEntityDestroyed) {
+  auto one = world.registry.create();
+  world.registry.assign<SpatialData>(one, vec2f{0, 0});
+  world.registry.assign<Collidable>(one, Collidable::Circle, 10);
+
+  auto two = world.registry.create();
+  world.registry.assign<SpatialData>(two, vec2f{5, -5});
+  world.registry.assign<Collidable>(two, Collidable::Circle, 20);
+  collisionsystem->update(0.0);
+  world.destroy(two);
+
+  auto receiver = std::make_shared<Receiver>();
+  world.bus.reg(receiver);
+
+  collisionsystem->update(0.0);
+  EXPECT_EQ(0, receiver->callcount);
 }
 
 TEST_F(CollisionSystemTest, NoEventIfCollisionIgnored) {
@@ -85,8 +103,9 @@ TEST_F(CollisionSystemTest, NoEventIfCollisionIgnored) {
 
   auto receiver = std::make_shared<Receiver>();
   world.bus.reg(receiver);
-  world.bus.publish<MovedEvent>(two, vec2f{-10e10, -10e10}, vec2f{5, -5});
-  world.bus.publish<MovedEvent>(one, vec2f{-10e10, -10e10}, vec2f{0, 0});
+
+  collisionsystem->update(0.0);
+
   EXPECT_EQ(0, receiver->callcount);
 }
 }  // namespace

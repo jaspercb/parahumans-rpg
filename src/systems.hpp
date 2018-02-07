@@ -83,14 +83,19 @@ private:
 struct CollisionSystem : public System {
 public:
 	CollisionSystem(int gridwidth);
-	bool collides(Entity one, Entity two);
+	bool collides(Entity one, Entity two) const;
 	void receive(const MovedEvent &e);
-	void receive(const CollidableCreatedEvent& e);
+	void receive(const EntityDestroyedEvent &e);
+	void update(TimeDelta dt) override;
 private:
 	const int gridwidth;
-	std::map<vec2i, std::set<Entity>> spatial_hash;
+	std::map<vec2i, std::set<Entity>> mSpatialHash;
+	std::map<Entity, vec2i> mGridCoords;
 	const vec2i getGridCoords(vec2f pos) const {
 		return {std::floor(pos.x/gridwidth), std::floor(pos.y/gridwidth)};
+	}
+	bool isWatching(Entity e) const {
+		return mGridCoords.find(e) != mGridCoords.end();
 	}
 	static bool _collides(const SpatialData &spatial1, const Collidable &collide1,
                           const SpatialData &spatial2, const Collidable &collide2);
@@ -98,10 +103,9 @@ private:
 
 class DestructibleSystem : public System {
 public:
-	DestructibleSystem();
+	DestructibleSystem() {};
 	void receive(const DamagedEvent &e);
 	void receive(const HealedEvent &e);
-	void update(TimeDelta dt) override;
 };
 
 class InputSystem : public System {

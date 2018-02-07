@@ -17,10 +17,6 @@ struct ControlSignal {
 	};
 };
 
-struct CollidableCreatedEvent {
-	Entity entity;
-};
-
 struct MovedEvent {
 	MovedEvent(Entity entity, vec2f oldPos, vec2f newPos) : entity(entity), oldPos(oldPos), newPos(newPos) {}
 	Entity entity;
@@ -48,6 +44,10 @@ struct HealedEvent {
 
 struct WindowExitEvent {
 	WindowExitEvent() {}
+};
+
+struct EntityDestroyedEvent {
+	Entity entity;
 };
 
 struct ConditionEvent {

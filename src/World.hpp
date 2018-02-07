@@ -16,7 +16,7 @@ struct World {
 	                 SDL_Event,
 	                 Control_UseAbilityEvent,
 	                 Control_MoveAccelEvent,
-	                 CollidableCreatedEvent> bus;
+	                 EntityDestroyedEvent> bus;
 	std::list<std::shared_ptr<System>> systems;
 
 	template<typename SystemType> void addSystem(std::shared_ptr<SystemType> system) {
@@ -30,5 +30,10 @@ struct World {
 		for (auto &system : systems) {
 			system->update(dt);
 		}
+	}
+
+	void destroy(Entity e) {
+		bus.publish<EntityDestroyedEvent>(e);
+		registry.destroy(e);
 	}
 };
