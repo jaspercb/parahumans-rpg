@@ -1,3 +1,6 @@
 [submodule "src/FastNoise"]
 	path = src/FastNoise
 	url = https://github.com/Auburns/FastNoise
+[submodule "entt"]
+	path = entt
+	url = https://github.com/skypjack/entt

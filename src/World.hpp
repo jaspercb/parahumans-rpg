@@ -2,7 +2,7 @@
 #include <SDL2/SDL.h>
 
 #include "events.hpp"
-#include "entt/entt.hpp"
+#include "../entt/src/entt/entt.hpp"
 #include "systems.hpp"
 
 struct World {
