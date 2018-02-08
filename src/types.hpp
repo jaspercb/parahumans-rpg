@@ -212,14 +212,14 @@ struct Condition {
 class Collidable;
 struct OnCollision;
 struct Renderable;
+struct TimeOut;
 
 struct ProjectileTemplate {
 	float projectile_speed;
 	Collidable* collidable;
 	OnCollision* oncollision;
 	Renderable* renderable;
-	// TODO: toggle whether repeat collisions are legal
-	// TODO: limit projectile lifetime
+	TimeOut* timeout;
 };
 
 struct Ability {

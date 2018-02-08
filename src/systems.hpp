@@ -106,6 +106,9 @@ public:
 	DestructibleSystem() {};
 	void receive(const DamagedEvent &e);
 	void receive(const HealedEvent &e);
+	void update(TimeDelta dt) override;
+private:
+	std::vector<Entity> mToDestroy;
 };
 
 class InputSystem : public System {
@@ -146,5 +149,9 @@ struct ControlSystem : public System {
 
 struct AbilitySystem : public System {
 	AbilitySystem() {};
+	void update(TimeDelta dt) override;
+};
+
+struct TimeOutSystem : public System {
 	void update(TimeDelta dt) override;
 };

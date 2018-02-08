@@ -286,6 +286,9 @@ void DestructibleSystem::receive(const DamagedEvent &e) {
 	if (!destructible.indestructible) {
 		destructible.HP -= e.damage.amount;
 	}
+	if (destructible.HP <= 0) {
+		mToDestroy.push_back(e.target);
+	}
 }
 
 void DestructibleSystem::receive(const HealedEvent &e) {
@@ -295,6 +298,13 @@ void DestructibleSystem::receive(const HealedEvent &e) {
 	if (destructible.healable) {
 		destructible.HP += e.amount;
 	}
+}
+
+void DestructibleSystem::update(TimeDelta dt) {
+	for (auto deadEntity : mToDestroy) {
+		world->destroy(deadEntity);
+	}
+	mToDestroy.clear();
 }
 
 vec2f InputSystem::getMouseGlobalCoords() const {
@@ -317,17 +327,29 @@ void InputSystem::receive(const SDL_Event& e) {
 	accelup.timeSinceUsed = 0;
 
 	Ability fireball;
+
 	ProjectileTemplate fireball_template;
-	fireball_template.collidable = new Collidable{Collidable::Circle, 10, 1 /* collisions until destroyed */};
-	fireball_template.oncollision = new OnCollision();
-	fireball_template.oncollision->damage = {Damage::Type::Heat, 5};
-	fireball_template.renderable = new Renderable();
 	fireball_template.projectile_speed = 500;
+
+	Collidable collidable{Collidable::Circle, 10, 1 /* collisions until destroyed */};
+	fireball_template.collidable = &collidable;
+
+	OnCollision oncollision;
+	oncollision.damage = {Damage::Type::Heat, 5};
+	fireball_template.oncollision = &oncollision;
+
+	Renderable renderable;
+	fireball_template.renderable = &renderable;
+
+	TimeOut timeout;
+	timeout.timeLeft = 2;
+	fireball_template.timeout = &timeout;
+
 	fireball.projectile_template = fireball_template;
 	fireball.type = Ability::Type::FireProjectile;
 	fireball.cooldown = 0;
 	fireball.timeSinceUsed = 0;
-	// Condition burn = {Condition::Priority::None, Condition::Type::BURN, 10, 200000000};
+	Condition burn = {Condition::Priority::None, Condition::Type::BURN, 10, 200000000};
 
 	switch(e.type) {
 	case SDL_KEYDOWN:
@@ -347,10 +369,6 @@ void InputSystem::receive(const SDL_Event& e) {
 		}
 		break;
 	}
-
-	delete fireball_template.oncollision;
-	delete fireball_template.renderable;
-	delete fireball_template.collidable;
 }
 
 void InputSystem::update(TimeDelta dt) {
@@ -502,6 +520,8 @@ void ControlSystem::receive(const Control_UseAbilityEvent& e) {
 			world->registry.assign<Renderable>(projectile, *templat.renderable);
 		if (templat.oncollision)
 			world->registry.assign<OnCollision>(projectile, *templat.oncollision);
+		if (templat.timeout)
+			world->registry.assign<TimeOut>(projectile, *templat.timeout);
 		if (templat.collidable) {
 			auto& collidable = world->registry.assign<Collidable>(projectile, *templat.collidable);
 			collidable.addIgnored(e.entity);
@@ -522,4 +542,17 @@ void AbilitySystem::update(TimeDelta dt) {
 			ability.timeSinceUsed += dt;
 		}
 	});
+}
+
+void TimeOutSystem::update(TimeDelta dt) {
+	std::vector<Entity> destroyed;
+	world->registry.view<TimeOut>().each([dt, &destroyed](auto entity, auto &timeout) {
+		timeout.timeLeft -= dt;
+		if (timeout.isExpired()) {
+			destroyed.push_back(entity);
+		} 
+	});
+	for (auto entity : destroyed) {
+		world->destroy(entity);
+	}
 }

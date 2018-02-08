@@ -35,6 +35,7 @@ public:
 		world.addSystem(std::make_shared<ConditionSystem>());
 		world.addSystem(std::make_shared<CollisionHandlerSystem>());
 		world.addSystem(std::make_shared<AbilitySystem>());
+		world.addSystem(std::make_shared<TimeOutSystem>());
 		world.addSystem(std::make_shared<CameraTrackingSystem>(&viewxform));
 		world.addSystem(std::make_shared<RenderSystem>(renderer, &viewxform));
 

@@ -137,3 +137,10 @@ struct OnCollision {
 };
 
 struct CameraFocus {};
+
+struct TimeOut {
+	TimeDelta timeLeft;
+	bool isExpired() const {
+		return timeLeft <= 0;
+	}
+};
