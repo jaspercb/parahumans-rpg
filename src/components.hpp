@@ -97,17 +97,17 @@ struct Collidable {
 		};
 	};
 	int collisionsUntilDestroyed; // -1 means "never delete this"
-	std::vector<Entity> ignored;
+	std::unordered_set<Entity> ignored;
 
 	Collidable(Type type, float arg1, int collisionsUntilDestroyed=-1)
 		: type(type), circle_radius(arg1), collisionsUntilDestroyed(collisionsUntilDestroyed) {}
 
 	bool canCollide(Entity other) const {
-		return collisionsUntilDestroyed != 0 && std::find(ignored.begin(), ignored.end(), other) == ignored.end();
+		return collisionsUntilDestroyed != 0 && ignored.find(other) == ignored.end();
 	}
 
 	void addIgnored(Entity other) {
-		ignored.push_back(other);
+		ignored.insert(other);
 	}
 };
 

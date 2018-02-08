@@ -147,12 +147,10 @@ void RenderSystem::update(TimeDelta dt) {
 				drawqueue.emplace(sdata.position.x + sdata.position.y + sdata.z, entity);
 		}
 	});
-	std::cout<<std::endl;
 	for (auto& pair : drawqueue) {
 		auto entity = pair.second;
 		renderEntity(entity);
 	}
-	std::cout<<std::endl;
 	SDL_RenderPresent(_renderer);
 	timeSinceStart += dt;
 };
