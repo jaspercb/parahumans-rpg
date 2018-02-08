@@ -116,7 +116,7 @@ TEST_F(CollisionSystemTest, EntityDestroyedOnCollision) {
 
 TEST_F(CollisionSystemTest, NoEventIfCollisionIgnored) {
   // These two entities should collide, but `one`
-  // is ignoring collisions with `two`.
+  // is ignoring collisions with `two`, so they don't.
   auto one = world.registry.create();
   world.registry.assign<SpatialData>(one, vec2f{0, 0});
   world.registry.assign<Collidable>(one, Collidable::Circle, 10);
@@ -125,7 +125,7 @@ TEST_F(CollisionSystemTest, NoEventIfCollisionIgnored) {
   world.registry.assign<Collidable>(two, Collidable::Circle, 20);
 
   auto &one_collidable = world.registry.get<Collidable>(one);
-  one_collidable.ignored.insert(two);
+  one_collidable.addIgnored(two);
 
   auto receiver = std::make_shared<Receiver>();
   world.bus.reg(receiver);
@@ -133,5 +133,40 @@ TEST_F(CollisionSystemTest, NoEventIfCollisionIgnored) {
   collisionsystem->update(0.0);
 
   EXPECT_EQ(0, receiver->callcount);
+}
+
+TEST_F(CollisionSystemTest, TryToBruteForceCauseSegfault) {
+  /* entt was segfaulting on certain entity destroy operations. I think I
+     fixed it, but this test is here to check for regressions.
+  */
+  std::vector<void*> ptrs;
+  auto ent = world.registry.create();
+  for (int i=0; i<100; i++) {
+    auto one = world.registry.create();
+    world.registry.assign<SpatialData>(one, vec2f{0, 0+200*i});
+    auto &collide = world.registry.assign<Collidable>(one, Collidable::Circle, 10);
+    collide.addIgnored(ent);
+    world.registry.assign<Renderable>(one);
+    void* ptr = malloc(200 * 10);
+    ptrs.push_back(ptr);
+  }
+  std::vector<Entity> toDestroy;
+  world.registry.view<SpatialData>().each(
+    [this, &toDestroy, &ptrs](auto entity, const auto &spatial) {
+    toDestroy.push_back(entity);
+    void* ptr = malloc(220);
+    ptrs.push_back(ptr);
+  });
+  for (auto i : toDestroy) {
+    world.destroy(i);
+    void* ptr = malloc(220);
+    ptrs.push_back(ptr);
+  }
+
+  collisionsystem->update(0.0);
+
+  for (auto &i : ptrs) {
+    free(i);
+  }
 }
 }  // namespace

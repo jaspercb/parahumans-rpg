@@ -32,7 +32,6 @@ void renderOvalOffset(SDL_Renderer* renderer, const ViewTransform* view, vec2i i
 }
 
 void RenderSystem::renderEntity(Entity entity) {
-	if (!world->registry.valid(entity)) return;
 	const auto &sdata = world->registry.get<SpatialData>(entity);
 	const auto &renderable = world->registry.get<Renderable>(entity);
 	vec2f fpos = _viewxform->screenCoordFromGlobal(sdata.position);
@@ -151,7 +150,6 @@ void RenderSystem::update(TimeDelta dt) {
 	std::cout<<std::endl;
 	for (auto& pair : drawqueue) {
 		auto entity = pair.second;
-		std::cout<< "RenderSystem rendering: "<<entity<<std::endl;
 		renderEntity(entity);
 	}
 	std::cout<<std::endl;

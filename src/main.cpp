@@ -28,7 +28,6 @@ public:
 		viewxform.scale = 1;
 		viewxform.screensize = {SCREEN_WIDTH, SCREEN_HEIGHT};
 		world.addSystem(std::make_shared<MovementSystem>());
-		world.addSystem(std::make_shared<RenderSystem>(renderer, &viewxform));
 		world.addSystem(std::make_shared<CollisionSystem>(100 /* gridwidth */));
 		world.addSystem(std::make_shared<DestructibleSystem>());
 		world.addSystem(std::make_shared<InputSystem>(&viewxform));
@@ -37,6 +36,7 @@ public:
 		world.addSystem(std::make_shared<CollisionHandlerSystem>());
 		world.addSystem(std::make_shared<AbilitySystem>());
 		world.addSystem(std::make_shared<CameraTrackingSystem>(&viewxform));
+		world.addSystem(std::make_shared<RenderSystem>(renderer, &viewxform));
 
 		for (int i=0; i<1; i++) {
 			auto entity = world.registry.create();
