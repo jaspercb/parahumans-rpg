@@ -86,6 +86,7 @@ public:
 	bool collides(Entity one, Entity two) const;
 	void receive(const MovedEvent &e);
 	void receive(const EntityDestroyedEvent &e);
+	void receive(const CollidedEvent &e);
 	void update(TimeDelta dt) override;
 private:
 	const int gridwidth;
@@ -99,6 +100,7 @@ private:
 	}
 	static bool _collides(const SpatialData &spatial1, const Collidable &collide1,
                           const SpatialData &spatial2, const Collidable &collide2);
+	std::unordered_set<Entity> mToDestroy;
 };
 
 class DestructibleSystem : public System {
@@ -108,7 +110,7 @@ public:
 	void receive(const HealedEvent &e);
 	void update(TimeDelta dt) override;
 private:
-	std::vector<Entity> mToDestroy;
+	std::unordered_set<Entity> mToDestroy;
 };
 
 class InputSystem : public System {

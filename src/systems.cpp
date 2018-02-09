@@ -218,6 +218,21 @@ void CollisionSystem::receive(const EntityDestroyedEvent &e) {
 	}
 }
 
+void CollisionSystem::receive(const CollidedEvent &e) {
+	auto& collide1 = world->registry.get<Collidable>(e.one);
+	auto& collide2 = world->registry.get<Collidable>(e.two);
+	if (collide1.ignoreRepeatCollisions)
+		collide1.addIgnored(e.two);
+	if (collide2.ignoreRepeatCollisions)
+		collide2.addIgnored(e.one);
+	collide1.collisionsUntilDestroyed = std::max(-1, collide1.collisionsUntilDestroyed-1);
+	collide2.collisionsUntilDestroyed = std::max(-1, collide2.collisionsUntilDestroyed-1);
+	if (collide1.collisionsUntilDestroyed == 0)
+		mToDestroy.insert(e.one);
+	if (collide2.collisionsUntilDestroyed == 0)
+		mToDestroy.insert(e.two);
+}
+
 void CollisionSystem::update(TimeDelta dt) {
 	// add all relevant things to the collision map
 	world->registry.view<SpatialData, Collidable>().each([this](auto entity, const auto &spatial, const auto &collidable) {
@@ -228,20 +243,13 @@ void CollisionSystem::update(TimeDelta dt) {
 		}
 	});
 
-	std::unordered_set<Entity> destroyed;
-	auto checkAndHandleCollisions = [this, &destroyed](Entity e1, Entity e2) {
+	auto checkAndHandleCollisions = [this](Entity e1, Entity e2) {
 		if (collides(e1, e2)) {
 			assert(e1 != e2);
 			auto& collide1 = world->registry.get<Collidable>(e1);
 			auto& collide2 = world->registry.get<Collidable>(e2);
 			if (collide1.canCollide(e2) && collide2.canCollide(e1)) {
 				world->bus.publish<CollidedEvent>(e1, e2);
-				collide1.collisionsUntilDestroyed = std::max(-1, collide1.collisionsUntilDestroyed-1);
-				collide2.collisionsUntilDestroyed = std::max(-1, collide2.collisionsUntilDestroyed-1);
-				if (collide1.collisionsUntilDestroyed == 0)
-					destroyed.insert(e1);
-				if (collide2.collisionsUntilDestroyed == 0)
-					destroyed.insert(e2);
 			}
 		}
 	};
@@ -272,10 +280,11 @@ void CollisionSystem::update(TimeDelta dt) {
 			}
 		}
 	}
-	for (auto entity : destroyed) {
-		std::cout<<"destroyed "<<entity<<std::endl;
+	for (Entity entity : mToDestroy) {
+		std::cout<<"CollisionSystem destroyed "<<entity<<std::endl;
 		world->destroy(entity);
 	}
+	mToDestroy.clear();
 }
 
 void DestructibleSystem::receive(const DamagedEvent &e) {
@@ -287,7 +296,7 @@ void DestructibleSystem::receive(const DamagedEvent &e) {
 		destructible.HP -= e.damage.amount;
 	}
 	if (destructible.HP <= 0) {
-		mToDestroy.push_back(e.target);
+		mToDestroy.insert(e.target);
 	}
 }
 
@@ -301,7 +310,7 @@ void DestructibleSystem::receive(const HealedEvent &e) {
 }
 
 void DestructibleSystem::update(TimeDelta dt) {
-	for (auto deadEntity : mToDestroy) {
+	for (Entity deadEntity : mToDestroy) {
 		world->destroy(deadEntity);
 	}
 	mToDestroy.clear();

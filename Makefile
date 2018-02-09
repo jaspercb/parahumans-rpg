@@ -24,6 +24,9 @@ INC := -I include -I lib
 bin/client: $(OBJECTS)
 	@echo "    Linking... $(ccbold)$(TARGET)$(ccend)"; $(CC) $(CFLAGS) $^ src/main.cpp -o $(TARGET) $(LIB);
 
+run: bin/client
+	./bin/client
+
 $(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
 	@mkdir -p $(BUILDDIR)
 	@mkdir -p $(BUILDDIR)/gfx

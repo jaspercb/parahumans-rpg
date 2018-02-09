@@ -96,7 +96,10 @@ struct Collidable {
 			float circle_radius;
 		};
 	};
-	int collisionsUntilDestroyed; // -1 means "never delete this"
+	 // How many collisions until this entity should be destroyed. -1 means "never delete"
+	int collisionsUntilDestroyed;
+	// Whether we want to add an entity to our ignore list after colliding
+	bool ignoreRepeatCollisions;
 	std::unordered_set<Entity> ignored;
 
 	Collidable(Type type, float arg1, int collisionsUntilDestroyed=-1)
