@@ -1,6 +1,7 @@
 #pragma once
 
 #include "types.hpp"
+#include "abilities.hpp"
 
 struct ControlSignal {
 	enum Type {
@@ -72,8 +73,8 @@ struct Control_MoveAccelEvent : public ControlEvent {
 };
 
 struct Control_UseAbilityEvent : public ControlEvent {
-	Control_UseAbilityEvent(Entity entity, vec2f target, Ability* ability)
+	Control_UseAbilityEvent(Entity entity, vec2f target, std::shared_ptr<Ability> ability)
 	: ControlEvent{entity}, target(target), ability(ability) {}
 	vec2f target;
-	Ability* ability;
+	std::shared_ptr<Ability> ability;
 };

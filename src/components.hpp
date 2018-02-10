@@ -127,16 +127,14 @@ struct Controllable {
 };
 
 struct AbilityData {
-	std::vector<Ability> abilities;
+	std::vector<std::shared_ptr<Ability>> abilities;
 };
 
 struct OnCollision {
 	/* 
-	A component storing behavioral data about what to do upon colliding.
+	A component storing a list of callbacks, saying what to do upon colliding.
 	*/
-	OnCollision() {};
-	Damage damage;
-	std::vector<Condition> conditions;
+	std::list<std::shared_ptr<OnCollisionCallback>> callbacks;
 };
 
 struct CameraFocus {};

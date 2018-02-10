@@ -155,7 +155,8 @@ struct Damage {
 		Heat,
 		Cold,
 		Electricity,
-		Toxin
+		Toxin,
+		LENGTH
 	};
 
 	Type type;
@@ -214,30 +215,17 @@ struct OnCollision;
 struct Renderable;
 struct TimeOut;
 
-struct ProjectileTemplate {
-	float projectile_speed;
-	Collidable* collidable;
-	OnCollision* oncollision;
-	Renderable* renderable;
-	TimeOut* timeout;
+enum KeyMap {
+	MoveUp,
+	MoveDown,
+	MoveLeft,
+	MoveRight,
+	Ability1,
+	Ability2
 };
 
-struct Ability {
-	enum Type {
-		FireProjectile,
-		// ExplosionOnTarget, // TODO
-		// TeleportToTarget,  // TODO
-		SelfCondition
-	};
-	Type type;
-	union {
-		ProjectileTemplate projectile_template;
-		Condition condition;
-	};
-	float timeSinceUsed;
-	float cooldown;
+class World;
 
-	bool isOffCooldown() const { return timeSinceUsed >= cooldown; }
+struct OnCollisionCallback {
+	virtual void operator()(World* world, Entity entity) = 0;
 };
-
-// TODO: Damage utility struct, bundling type and amount

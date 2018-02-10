@@ -1,6 +1,8 @@
 #include "systems.hpp"
 #include "World.hpp"
 #include "sdlTools.hpp"
+#include "abilities.hpp"
+
 
 #include <unistd.h>
 #include <iostream>
@@ -323,59 +325,21 @@ vec2f InputSystem::getMouseGlobalCoords() const {
 }
 
 void InputSystem::receive(const SDL_Event& e) {
-	Ability speedup;
-	speedup.type = Ability::Type::SelfCondition;
-	speedup.cooldown = 0;
-	speedup.condition = {Condition::Priority::Multiplier, Condition::Type::MOD_SPEED, 2, 1 /* seconds */};
-	speedup.timeSinceUsed = 0;
-
-	Ability accelup;
-	accelup.type = Ability::Type::SelfCondition;
-	accelup.cooldown = 0;
-	accelup.condition = {Condition::Priority::Multiplier, Condition::Type::MOD_ACCEL, 2, 1};
-	accelup.timeSinceUsed = 0;
-
-	Ability fireball;
-
-	ProjectileTemplate fireball_template;
-	fireball_template.projectile_speed = 500;
-
-	Collidable collidable{Collidable::Circle, 10, 1 /* collisions until destroyed */};
-	fireball_template.collidable = &collidable;
-
-	OnCollision oncollision;
-	oncollision.damage = {Damage::Type::Heat, 5};
-	fireball_template.oncollision = &oncollision;
-
-	Renderable renderable;
-	fireball_template.renderable = &renderable;
-
-	TimeOut timeout;
-	timeout.timeLeft = 2;
-	fireball_template.timeout = &timeout;
-
-	fireball.projectile_template = fireball_template;
-	fireball.type = Ability::Type::FireProjectile;
-	fireball.cooldown = 0;
-	fireball.timeSinceUsed = 0;
-	Condition burn = {Condition::Priority::None, Condition::Type::BURN, 10, 200000000};
-
 	switch(e.type) {
 	case SDL_KEYDOWN:
+		unsigned int abilityID;
 		switch(e.key.keysym.sym) {
-		case SDLK_q:
-			world->registry.view<Controllable>().each([this, &speedup, &accelup](auto entity, const auto &controllable) {
-				world->bus.publish<Control_UseAbilityEvent>(entity, vec2f{0, 0}, &speedup);
-				world->bus.publish<Control_UseAbilityEvent>(entity, vec2f{0, 0}, &accelup);
-			});
-			break;
-		case SDLK_e:
-			auto target = getMouseGlobalCoords();
-			world->registry.view<Controllable>().each([this, target, &fireball](auto entity, const auto &controllable) {
-				world->bus.publish<Control_UseAbilityEvent>(entity, target, &fireball);
-			});
-			break;
+		// TODO: actual keybindings
+		case SDLK_q: abilityID = 0; break;
+		case SDLK_e: abilityID = 1; break;
+		default: abilityID = 9999999; break;
 		}
+		auto target = getMouseGlobalCoords();
+		world->registry.view<Controllable>().each([this, &target, abilityID](auto entity, const auto &controllable) {
+			const auto &abilityData = world->registry.get<AbilityData>(entity);
+			if (abilityID < abilityData.abilities.size())
+				world->bus.publish<Control_UseAbilityEvent>(entity, target, abilityData.abilities.at(abilityID));
+		});
 		break;
 	}
 }
@@ -481,6 +445,7 @@ void ConditionSystem::recalculateStats(Stats &stats, Conditions &conditions) {
 }
 
 void CollisionHandlerSystem::receive(const CollidedEvent &e) {
+	std::cout<<"CollisionHandlerSystem::receive(CollidedEvent)"<<std::endl;
 	handle(e.one, e.two);
 	handle(e.two, e.one);
 }
@@ -489,11 +454,8 @@ void CollisionHandlerSystem::handle(Entity source, Entity target) {
 	// Applies source's on-collision effects to target
 	if (world->registry.has<OnCollision>(source)) {
 		const auto &oncollision = world->registry.get<OnCollision>(source);
-		for (const auto &condition : oncollision.conditions) {
-			world->bus.publish<ConditionEvent>(condition, source, target);
-		}
-		if (oncollision.damage.amount) {
-			world->bus.publish<DamagedEvent>(source, target, oncollision.damage);
+		for (const auto &callback : oncollision.callbacks) {
+			(*callback)(world, target);
 		}
 	}
 }
@@ -516,39 +478,14 @@ void ControlSystem::receive(const Control_MoveAccelEvent& e) {
 
 void ControlSystem::receive(const Control_UseAbilityEvent& e) {
 	std::cout<<"ControlSystem::receive(UseAbilityEvent)"<<std::endl;
-	if (!e.ability->isOffCooldown()) return;
-	switch(e.ability->type) {
-	case Ability::Type::FireProjectile: {
-		const ProjectileTemplate& templat = e.ability->projectile_template;
-		auto &sdata = world->registry.get<SpatialData>(e.entity);
-		auto velocity = e.target - sdata.position;
-		velocity.truncate(templat.projectile_speed);
-		Entity projectile = world->registry.create();
-		world->registry.assign<SpatialData>(projectile, sdata.position, velocity);
-		if (templat.renderable)
-			world->registry.assign<Renderable>(projectile, *templat.renderable);
-		if (templat.oncollision)
-			world->registry.assign<OnCollision>(projectile, *templat.oncollision);
-		if (templat.timeout)
-			world->registry.assign<TimeOut>(projectile, *templat.timeout);
-		if (templat.collidable) {
-			auto& collidable = world->registry.assign<Collidable>(projectile, *templat.collidable);
-			collidable.addIgnored(e.entity);
-		}
-		std::cout<<"ControlSystem created projectile, id="<<projectile<<std::endl;
-		}
-		break;
-	case Ability::Type::SelfCondition:
-		world->bus.publish<ConditionEvent>(e.ability->condition, e.entity, e.entity);
-		break;
-	}
-	e.ability->timeSinceUsed = 0;
+	if (!e.ability->isUsable()) return;
+	e.ability->onKeyDown(e.target);
 }
 
 void AbilitySystem::update(TimeDelta dt) {
 	world->registry.view<AbilityData>().each([dt, this](auto entity, auto &abilitydata) {
 		for (auto &ability : abilitydata.abilities) {
-			ability.timeSinceUsed += dt;
+			ability->update(dt);
 		}
 	});
 }

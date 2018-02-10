@@ -7,6 +7,7 @@
 #include "systems.hpp"
 #include "components.hpp"
 #include "World.hpp"
+#include "abilities.hpp"
 
 #define SCREEN_WIDTH 1000
 #define SCREEN_HEIGHT 700
@@ -48,6 +49,10 @@ public:
 			world.registry.assign<Collidable>(entity, Collidable::Circle, 20);
 			world.registry.assign<Conditions>(entity);
 			world.registry.assign<Stats>(entity, 133 /*movespeed*/, 40 /*accel*/);
+			auto &abilitydata = world.registry.assign<AbilityData>(entity);
+			abilitydata.abilities.push_back(TestProjectileAbility(&world, entity));
+			abilitydata.abilities.push_back(TestBuffAbility(&world, entity, Condition{Condition::Priority::Multiplier, Condition::Type::MOD_SPEED, 2, 1 /* seconds */}));
+
 			world.registry.attach<CameraFocus>(entity);
 		}
 		for (int i=0; i<8; i++) {
