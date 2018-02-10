@@ -394,19 +394,19 @@ void InputSystem::update(TimeDelta dt) {
 	world->bus.publish<SDL_Event>(e);
 	world->registry.view<SpatialData, Controllable>().each([this, dt, keys](auto entity, auto &sdata, auto &controllable) {
 		vec2f accel = {0, 0};
-		if (keys[SDL_SCANCODE_LEFT]) {
+		if (keys[SDL_SCANCODE_A]) {
 			accel.x -= 1;
 			accel.y += 1;
 		}
-		if (keys[SDL_SCANCODE_RIGHT]) {
+		if (keys[SDL_SCANCODE_D]) {
 			accel.x += 1;
 			accel.y -= 1;
 		}
-		if (keys[SDL_SCANCODE_UP]) {
+		if (keys[SDL_SCANCODE_W]) {
 			accel.x -= 1;
 			accel.y -= 1;
 		}
-		if (keys[SDL_SCANCODE_DOWN]) {
+		if (keys[SDL_SCANCODE_S]) {
 			accel.x += 1;
 			accel.y += 1;
 		}
