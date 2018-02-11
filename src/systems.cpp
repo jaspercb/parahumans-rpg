@@ -161,6 +161,7 @@ void CameraTrackingSystem::update(TimeDelta dt) {
 	// Update center point
 	const static float VELOCITY_WEIGHTING = 0.5;
 	const static float CATCHUP_SPEED = 0.07;
+	if (!world->registry.has<CameraFocus>()) return;
 	Entity attachee = world->registry.attachee<CameraFocus>();
 	const auto& spatial = world->registry.get<SpatialData>(attachee); 
 	vec2f diff = spatial.position + VELOCITY_WEIGHTING * spatial.velocity - _viewxform->viewcenter;

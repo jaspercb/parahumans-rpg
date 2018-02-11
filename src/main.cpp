@@ -29,7 +29,7 @@ public:
 		viewxform.scale = 1;
 		viewxform.screensize = {SCREEN_WIDTH, SCREEN_HEIGHT};
 		world.addSystem(std::make_shared<MovementSystem>());
-		world.addSystem(std::make_shared<CollisionSystem>(100 /* gridwidth */));
+		world.addSystem(std::make_shared<CollisionSystem>(500 /* gridwidth */));
 		world.addSystem(std::make_shared<DestructibleSystem>());
 		world.addSystem(std::make_shared<InputSystem>(&viewxform));
 		world.addSystem(std::make_shared<ControlSystem>());
@@ -51,8 +51,8 @@ public:
 			world.registry.assign<Stats>(entity, 133 /*movespeed*/, 40 /*accel*/);
 			auto &abilitydata = world.registry.assign<AbilityData>(entity);
 			abilitydata.abilities.push_back(TestProjectileAbility(&world, entity));
-			abilitydata.abilities.push_back(TestBuffAbility(&world, entity, Condition{Condition::Priority::Multiplier, Condition::Type::MOD_SPEED, 2, 1 /* seconds */}));
-
+			//abilitydata.abilities.push_back(TestBuffAbility(&world, entity, Condition{Condition::Priority::Multiplier, Condition::Type::MOD_SPEED, 2, 1 /* seconds */}));
+			abilitydata.abilities.push_back(TestAreaEffectTargetAbility(&world, entity));
 			world.registry.attach<CameraFocus>(entity);
 		}
 		for (int i=0; i<8; i++) {

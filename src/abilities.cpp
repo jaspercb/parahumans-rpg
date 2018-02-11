@@ -12,11 +12,15 @@ void BasicProjectileAbility::onKeyDown(vec2f target) {
 	auto &collidable = mWorld->registry.assign<Collidable>(projectile, Collidable::Circle, mProjectileRadius, 1 /* collisions until destroyed */);
 	collidable.addIgnored(mOwner);
 	auto &oncollision = mWorld->registry.assign<OnCollision>(projectile);
-	oncollision.callbacks.push_back(mInstantEffect);
+	oncollision.callbacks.push_back(mInstantSingleEffect);
 }
 
 void SelfInstantEffectAbility::onKeyDown(vec2f target) {
-	(*mInstantEffect)(mWorld, mOwner);
+	(*mInstantSingleEffect)(mWorld, mOwner);
+}
+
+void AreaEffectTargetAbility::onKeyDown(vec2f target) {
+	(*mInstantAreaEffect)(mWorld, target);
 }
 
 std::shared_ptr<Ability> TestProjectileAbility(World* world, Entity owner) {
@@ -25,4 +29,14 @@ std::shared_ptr<Ability> TestProjectileAbility(World* world, Entity owner) {
 
 std::shared_ptr<Ability> TestBuffAbility(World* world, Entity owner, Condition condition) {
 	return std::make_shared<SelfInstantEffectAbility>(world, owner, std::make_shared<InstantSingleCondition>(condition));
+}
+
+std::shared_ptr<Ability> TestAreaEffectTargetAbility(World* world, Entity owner) {
+	return std::make_shared<AreaEffectTargetAbility>(
+		world, owner,
+		std::make_shared<InstantAreaExplosion>(
+			std::make_shared<InstantSingleDamage>(
+				Damage{Damage::Type::Impact, 10}),
+			250)
+		);
 }

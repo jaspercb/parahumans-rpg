@@ -15,7 +15,7 @@ public:
 };
 
 class InstantSingleEffect : public Effect, public OnCollisionCallback {
-/* Effects like "I am stronger" or "things near me catch on fire" */
+/* Effects like "take 5 poison damage" or "catch on fire" */
 public:
 	InstantSingleEffect() {};
 	virtual void operator()(World* world, Entity e) = 0;
@@ -37,4 +37,20 @@ public:
 	virtual void operator()(World* world, Entity e) override;
 private:
 	Condition mCondition;
+};
+
+class InstantAreaEffect : public Effect {
+public:
+	virtual void operator()(World* world, vec2f pos) = 0;
+	virtual void operator()(World* world, Entity e) {};
+};
+
+class InstantAreaExplosion : public InstantAreaEffect {
+public:
+	InstantAreaExplosion(std::shared_ptr<InstantSingleEffect> effect, float radius)
+		: mInstantSingleEffect(effect), mExplosionRadius(radius) {};
+	virtual void operator()(World* world, vec2f pos) override;
+private:
+	std::shared_ptr<InstantSingleEffect> mInstantSingleEffect;
+	float mExplosionRadius;
 };

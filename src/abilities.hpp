@@ -1,45 +1,7 @@
 #pragma once
 #include <memory>
 #include "types.hpp"
-
-class World;
-
-class Effect {
-	virtual void operator()(World* world, Entity e) = 0;
-};
-
-class PersistentSingleEffect : public Effect {
-/* Effects like "I am stronger" or "things near me catch on fire" */
-public:
-	PersistentSingleEffect() {};
-	virtual void apply(World* world, Entity e)  = 0;
-	virtual void remove(World* world, Entity e) = 0;
-};
-
-class InstantSingleEffect : public Effect, public OnCollisionCallback {
-/* Effects like "I am stronger" or "things near me catch on fire" */
-public:
-	InstantSingleEffect() {};
-	virtual void operator()(World* world, Entity e) = 0;
-};
-
-class InstantSingleDamage : public InstantSingleEffect {
-public:
-	InstantSingleDamage(Damage damage)
-		: mDamage(damage) {};
-	virtual void operator()(World* world, Entity e) override;
-private:
-	Damage mDamage;
-};
-
-class InstantSingleCondition : public InstantSingleEffect {
-public:
-	InstantSingleCondition(const Condition& condition)
-		: mCondition(condition) {};
-	virtual void operator()(World* world, Entity e) override;
-private:
-	Condition mCondition;
-};
+#include "effects.hpp"
 
 class Ability {
 public:
@@ -66,28 +28,38 @@ public:
 };
 */
 
+class AreaEffectTargetAbility : public Ability {
+public:
+	AreaEffectTargetAbility(World* world, Entity owner, std::shared_ptr<InstantAreaEffect> instantAreaEffect)
+		: Ability(world, owner), mInstantAreaEffect(instantAreaEffect) {};
+	void onKeyDown(vec2f target) override;
+private:
+	std::shared_ptr<InstantAreaEffect> mInstantAreaEffect;
+};
+
 class BasicProjectileAbility : public Ability {
 public:
-	BasicProjectileAbility(World* world, Entity owner, std::shared_ptr<InstantSingleEffect> instantEffect,
+	BasicProjectileAbility(World* world, Entity owner, std::shared_ptr<InstantSingleEffect> instantSingleEffect,
 	                       float projectileSpeed, float projectileRadius)
-		: Ability(world, owner), mInstantEffect(std::move(instantEffect)),
+		: Ability(world, owner), mInstantSingleEffect(instantSingleEffect),
 		  mProjectileSpeed(projectileSpeed), mProjectileRadius(projectileRadius) {};
 
 	void onKeyDown(vec2f target) override;
 private:
-	std::shared_ptr<InstantSingleEffect> mInstantEffect;
+	std::shared_ptr<InstantSingleEffect> mInstantSingleEffect;
 	float mProjectileSpeed;
 	float mProjectileRadius;
 };
 
 class SelfInstantEffectAbility : public Ability {
 public:
-	SelfInstantEffectAbility(World* world, Entity owner, std::shared_ptr<InstantSingleEffect> instantEffect)
-		: Ability(world, owner), mInstantEffect(instantEffect) {};
+	SelfInstantEffectAbility(World* world, Entity owner, std::shared_ptr<InstantSingleEffect> instantSingleEffect)
+		: Ability(world, owner), mInstantSingleEffect(instantSingleEffect) {};
 	void onKeyDown(vec2f target) override;
 private:
-	std::shared_ptr<InstantSingleEffect> mInstantEffect;
+	std::shared_ptr<InstantSingleEffect> mInstantSingleEffect;
 };
 
 std::shared_ptr<Ability> TestProjectileAbility(World* world, Entity owner);
 std::shared_ptr<Ability> TestBuffAbility(World* world, Entity owner, Condition condition);
+std::shared_ptr<Ability> TestAreaEffectTargetAbility(World* world, Entity owner);
