@@ -1,5 +1,7 @@
 #include "types.hpp"
 
+// TODO: AOE effects should be able to give owner immunity
+
 class World;
 
 class Effect {

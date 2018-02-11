@@ -1,5 +1,6 @@
 #pragma once
 #include <memory>
+#include <optional>
 #include "types.hpp"
 #include "effects.hpp"
 
@@ -60,6 +61,24 @@ private:
 	std::shared_ptr<InstantSingleEffect> mInstantSingleEffect;
 };
 
+class PuckAbility : public Ability {
+	/* Fire projectile which passes through foes. Use power again to swap location
+	   with projectile, with non-damage, effect-only explosions at both points.
+	*/
+public:
+	PuckAbility(World* world, Entity owner, std::shared_ptr<InstantAreaEffect> instantAreaEffect,
+	            float projectileSpeed, float projectileDuration)
+		: Ability(world, owner), mInstantAreaEffect(instantAreaEffect), mProjectileSpeed(projectileSpeed),
+		  mProjectileDuration(projectileDuration) {};
+	void onKeyDown(vec2f target) override;
+private:
+	std::shared_ptr<InstantAreaEffect> mInstantAreaEffect;
+	std::optional<Entity> mProjectile;
+	float mProjectileSpeed;
+	float mProjectileDuration;
+};
+
 std::shared_ptr<Ability> TestProjectileAbility(World* world, Entity owner);
 std::shared_ptr<Ability> TestBuffAbility(World* world, Entity owner, Condition condition);
 std::shared_ptr<Ability> TestAreaEffectTargetAbility(World* world, Entity owner);
+std::shared_ptr<Ability> TestPuckAbility(World* world, Entity owner);
