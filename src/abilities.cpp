@@ -26,11 +26,3 @@ std::shared_ptr<Ability> TestProjectileAbility(World* world, Entity owner) {
 std::shared_ptr<Ability> TestBuffAbility(World* world, Entity owner, Condition condition) {
 	return std::make_shared<SelfInstantEffectAbility>(world, owner, std::make_shared<InstantSingleCondition>(condition));
 }
-
-void InstantSingleCondition::operator()(World* world, Entity e) {
-	world->bus.publish<ConditionEvent>(mCondition, e, e);
-}
-
-void InstantSingleDamage::operator()(World* world, Entity e) {
-	world->bus.publish<DamagedEvent>(e /* TODO: should be owner */, e, mDamage);
-}

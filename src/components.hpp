@@ -98,15 +98,18 @@ struct Collidable {
 	};
 	 // How many collisions until this entity should be destroyed. -1 means "never delete"
 	int collisionsUntilDestroyed;
+	TimeDelta timeUntilCollidable;
 	// Whether we want to add an entity to our ignore list after colliding
 	bool ignoreRepeatCollisions;
 	std::unordered_set<Entity> ignored;
 
-	Collidable(Type type, float arg1, int collisionsUntilDestroyed=-1)
-		: type(type), circle_radius(arg1), collisionsUntilDestroyed(collisionsUntilDestroyed) {}
+	Collidable(Type type, float arg1, int collisionsUntilDestroyed=-1, TimeDelta timeUntilCollidable=0.0)
+		: type(type), circle_radius(arg1), collisionsUntilDestroyed(collisionsUntilDestroyed), timeUntilCollidable(timeUntilCollidable) {}
 
 	bool canCollide(Entity other) const {
-		return collisionsUntilDestroyed != 0 && ignored.find(other) == ignored.end();
+		return (timeUntilCollidable <= 0.0
+		     && collisionsUntilDestroyed != 0
+		     && ignored.find(other) == ignored.end());
 	}
 
 	void addIgnored(Entity other) {
