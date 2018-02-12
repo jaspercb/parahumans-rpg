@@ -53,7 +53,8 @@ public:
 			abilitydata.abilities.push_back(TestProjectileAbility(&world, entity));
 			//abilitydata.abilities.push_back(TestBuffAbility(&world, entity, Condition{Condition::Priority::Multiplier, Condition::Type::MOD_SPEED, 2, 1 /* seconds */}));
 			//abilitydata.abilities.push_back(TestAreaEffectTargetAbility(&world, entity));
-			abilitydata.abilities.push_back(TestPuckAbility(&world, entity));
+			//abilitydata.abilities.push_back(TestPuckAbility(&world, entity));
+			abilitydata.abilities.push_back(TestHeartseekerAbility(&world, entity));
 			world.registry.attach<CameraFocus>(entity);
 		}
 		for (int i=0; i<8; i++) {

@@ -326,8 +326,15 @@ vec2f InputSystem::getMouseGlobalCoords() const {
 }
 
 void InputSystem::receive(const SDL_Event& e) {
+	if (e.key.repeat == true) return;
+	Control_UseAbilityEvent::Type abilityUseType;
 	switch(e.type) {
 	case SDL_KEYDOWN:
+		abilityUseType = Control_UseAbilityEvent::Type::KeyDown; break;
+	case SDL_KEYUP:
+		abilityUseType = Control_UseAbilityEvent::Type::KeyUp; break;
+	}
+	if (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP) {
 		unsigned int abilityID;
 		switch(e.key.keysym.sym) {
 		// TODO: actual keybindings
@@ -336,12 +343,11 @@ void InputSystem::receive(const SDL_Event& e) {
 		default: abilityID = 9999999; break;
 		}
 		auto target = getMouseGlobalCoords();
-		world->registry.view<Controllable>().each([this, &target, abilityID](auto entity, const auto &controllable) {
+		world->registry.view<Controllable>().each([this, &target, abilityUseType, abilityID](auto entity, const auto &controllable) {
 			const auto &abilityData = world->registry.get<AbilityData>(entity);
 			if (abilityID < abilityData.abilities.size())
-				world->bus.publish<Control_UseAbilityEvent>(entity, target, abilityData.abilities.at(abilityID));
+				world->bus.publish<Control_UseAbilityEvent>(entity, abilityUseType, target, abilityData.abilities.at(abilityID));
 		});
-		break;
 	}
 }
 
@@ -479,8 +485,13 @@ void ControlSystem::receive(const Control_MoveAccelEvent& e) {
 
 void ControlSystem::receive(const Control_UseAbilityEvent& e) {
 	std::cout<<"ControlSystem::receive(UseAbilityEvent)"<<std::endl;
-	if (!e.ability->isUsable()) return;
-	e.ability->onKeyDown(e.target);
+	//if (!e.ability->isUsable()) return;
+	switch(e.type) {
+	case Control_UseAbilityEvent::KeyDown:
+		e.ability->onKeyDown(e.target); break;
+	case Control_UseAbilityEvent::KeyUp:
+		e.ability->onKeyUp(e.target); break;
+	}
 }
 
 void AbilitySystem::update(TimeDelta dt) {

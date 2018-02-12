@@ -4,15 +4,36 @@
 void BasicProjectileAbility::onKeyDown(vec2f target) {
 	// fire in direction of enemy
 	auto &sdata = mWorld->registry.get<SpatialData>(mOwner);
-	auto velocity = target - sdata.position;
+	makeProjectile(sdata.position, target);
+}
+
+Entity BasicProjectileAbility::makeProjectile(vec2f position, vec2f target) {
+	auto velocity = target - position;
 	velocity.truncate(mProjectileSpeed);
 	Entity projectile = mWorld->registry.create();
-	mWorld->registry.assign<SpatialData>(projectile, sdata.position, velocity, 20 /* z */);
+	mWorld->registry.assign<SpatialData>(projectile, position, velocity, 20 /* z */);
 	mWorld->registry.assign<Renderable>(projectile);
 	auto &collidable = mWorld->registry.assign<Collidable>(projectile, Collidable::Circle, mProjectileRadius, 1 /* collisions until destroyed */);
 	collidable.addIgnored(mOwner);
 	auto &oncollision = mWorld->registry.assign<OnCollision>(projectile);
 	oncollision.callbacks.push_back(mInstantSingleEffect);
+	return projectile;
+}
+
+void HeartseekerAbility::onKeyDown(vec2f target) {
+	auto &sdata = mWorld->registry.get<SpatialData>(mOwner);
+	mActiveProjectile = makeProjectile(sdata.position, target);
+	assert(mActiveProjectile);
+}
+
+void HeartseekerAbility::onKeyUp(vec2f target) {
+	if (mActiveProjectile && mWorld->registry.valid(mActiveProjectile.value())) {
+		auto &sdata = mWorld->registry.get<SpatialData>(mActiveProjectile.value());
+		vec2f newVelocity = target - sdata.position;
+		newVelocity.truncate(sdata.velocity.length());
+		sdata.velocity = newVelocity;
+		mActiveProjectile.reset();
+	}
 }
 
 void SelfInstantEffectAbility::onKeyDown(vec2f target) {
@@ -46,6 +67,14 @@ void PuckAbility::onKeyDown(vec2f target) {
 	}
 }
 
+void FlashAbility::onKeyDown(vec2f target) {
+	auto &sdata = mWorld->registry.get<SpatialData>(mOwner);
+	vec2f offset = target-sdata.position;
+	if (offset.length() > mRange) {
+		offset.truncate(mRange);
+	}
+	sdata.position += offset;
+}
 
 std::shared_ptr<Ability> TestProjectileAbility(World* world, Entity owner) {
 	return std::make_shared<BasicProjectileAbility>(world, owner, std::make_shared<InstantSingleDamage>(Damage{Damage::Type::Impact, 10}), 500, 50);
@@ -74,4 +103,8 @@ std::shared_ptr<Ability> TestPuckAbility(World* world, Entity owner) {
 			150),
 		400, 2
 		);
+}
+
+std::shared_ptr<Ability> TestHeartseekerAbility(World* world, Entity owner) {
+	return std::make_shared<HeartseekerAbility>(world, owner, std::make_shared<InstantSingleDamage>(Damage{Damage::Type::Impact, 10}), 500, 50);
 }

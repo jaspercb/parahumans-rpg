@@ -73,8 +73,12 @@ struct Control_MoveAccelEvent : public ControlEvent {
 };
 
 struct Control_UseAbilityEvent : public ControlEvent {
-	Control_UseAbilityEvent(Entity entity, vec2f target, std::shared_ptr<Ability> ability)
-	: ControlEvent{entity}, target(target), ability(ability) {}
+	enum Type {
+		KeyDown,
+		KeyUp
+		// Click-and-drag
+	};
+	Type type;
 	vec2f target;
 	std::shared_ptr<Ability> ability;
 };

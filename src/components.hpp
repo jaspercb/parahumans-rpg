@@ -62,6 +62,19 @@ struct Renderable {
 	};
 };
 
+/*
+// TODO: Stat refactor. Some things are immune to some stats being modified - how to represent?
+// Could break up into stats that everything has vs stats that only people have
+// Could have a Stat monoclass with various flags
+class InorganicStats {
+	// stuff like resistance to damage, time-locked ness
+};
+
+class OrganicStats {
+	// stuff like 
+};
+*/
+
 class ConditionSystem;
 
 class Stats {

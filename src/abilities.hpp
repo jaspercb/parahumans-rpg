@@ -46,12 +46,24 @@ public:
 		  mProjectileSpeed(projectileSpeed), mProjectileRadius(projectileRadius) {};
 
 	void onKeyDown(vec2f target) override;
+protected:
+	Entity makeProjectile(vec2f position, vec2f target);
 private:
 	std::shared_ptr<InstantSingleEffect> mInstantSingleEffect;
 	float mProjectileSpeed;
 	float mProjectileRadius;
 };
 
+class HeartseekerAbility : public BasicProjectileAbility {
+public:
+	HeartseekerAbility(World* world, Entity owner, std::shared_ptr<InstantSingleEffect> instantSingleEffect,
+	                       float projectileSpeed, float projectileRadius)
+		: BasicProjectileAbility(world, owner, instantSingleEffect, projectileSpeed, projectileRadius) {};
+	void onKeyDown(vec2f target) override;
+	void onKeyUp(vec2f target) override;
+private:
+	std::optional<Entity> mActiveProjectile;
+};
 class SelfInstantEffectAbility : public Ability {
 public:
 	SelfInstantEffectAbility(World* world, Entity owner, std::shared_ptr<InstantSingleEffect> instantSingleEffect)
@@ -78,7 +90,18 @@ private:
 	float mProjectileDuration;
 };
 
+class FlashAbility : public Ability {
+public:
+	FlashAbility(World* world, Entity owner, float range)
+		: Ability(world, owner), mRange(range) {};
+	void onKeyDown(vec2f target) override;
+private:
+	float mRange;
+	// float mStaminaCost;
+};
+
 std::shared_ptr<Ability> TestProjectileAbility(World* world, Entity owner);
 std::shared_ptr<Ability> TestBuffAbility(World* world, Entity owner, Condition condition);
 std::shared_ptr<Ability> TestAreaEffectTargetAbility(World* world, Entity owner);
 std::shared_ptr<Ability> TestPuckAbility(World* world, Entity owner);
+std::shared_ptr<Ability> TestHeartseekerAbility(World* world, Entity owner);
