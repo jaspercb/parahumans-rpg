@@ -25,7 +25,7 @@ TEST_F(ConditionSystemTest, BleedConditionDamages) {
   auto bleedingEntity = world.registry.create();
   auto &destructible = world.registry.assign<Destructible>(bleedingEntity, 100 /* HP */);
   world.registry.assign<Conditions>(bleedingEntity);
-  Condition bleed = {Condition::Priority::None, Condition::Type::BLEED, 20 /* power */, 1 /* seconds */};
+  Condition bleed = {Condition::Type::BLEED, 20 /* power */, 1 /* seconds */};
   world.bus.publish<ConditionEvent>(bleed, bleedingEntity, bleedingEntity);
   conditionsystem->update(0.3);
   // 20 damage/sec for 0.3 sec is 6 damage from 100 starting HP
@@ -37,7 +37,7 @@ TEST_F(ConditionSystemTest, HealConditionHeals) {
   auto &destructible = world.registry.assign<Destructible>(regenEntity, 100 /* HP */);
   destructible.HP = 10;
   auto &conditions = world.registry.assign<Conditions>(regenEntity);
-  Condition regen = {Condition::Priority::None, Condition::Type::REGEN, 10 /* power */, 1 /* seconds */};
+  Condition regen = {Condition::Type::REGEN, 10 /* power */, 1 /* seconds */};
   world.bus.publish<ConditionEvent>(regen, regenEntity, regenEntity);
   conditionsystem->update(0.3);
   // 10 regen/sec for 0.3 sec is 3 up from 10 starting HP
@@ -60,7 +60,7 @@ TEST_F(ConditionSystemTest, StatChangeConditionChangesStats) {
   auto &stats      = world.registry.assign<Stats>(entity, 5 /* speed */, 7 /* accel */);
   world.registry.assign<Conditions>(entity);
   
-  Condition speedup = {Condition::Priority::Multiplier, Condition::Type::MOD_SPEED, 10 /* multiplier */, 100};
+  Condition speedup = {Condition::Type::STAT_MULTIPLY, 10 /* multiplier */, 100, Stat::SPEED};
   world.bus.publish<ConditionEvent>(speedup, entity, entity);
   conditionsystem->update(0.3);
   EXPECT_NEAR(50, stats.speed(), 0.00001);

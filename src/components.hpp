@@ -3,6 +3,7 @@
 #include <unordered_set>
 #include <list>
 #include <vector>
+#include <array>
 
 #include "sdlTools.hpp"
 #include "types.hpp"
@@ -80,21 +81,19 @@ class ConditionSystem;
 class Stats {
 friend ConditionSystem;
 private:
-	struct {
-		// float brawn, athletics, dexterity, wits, social, knowledge, guts;
-		float speed, accel;
-	} basestats, stats;
+	std::array<float, Stat::SIZE> basestats, stats;
 	bool dirty;
 public:
 	Stats(float speed, float accel) {
-		for (auto i : {&basestats, &stats}) {
-			i->speed = speed;
-			i->accel = accel;
-		}
+		basestats[Stat::SPEED] = speed;
+		basestats[Stat::ACCEL] = accel;
+		stats = basestats;
 		dirty = false;
 	}
-	float speed() const { return stats.speed; }
-	float accel() const { return stats.accel; }
+	float& operator[](Stat stat) { return stats[stat]; }
+	float  operator[](Stat stat) const { return stats[stat]; }
+	float speed() const { return (*this)[Stat::SPEED]; }
+	float accel() const { return (*this)[Stat::ACCEL]; }
 };
 
 struct Conditions : public std::list<Condition> {};

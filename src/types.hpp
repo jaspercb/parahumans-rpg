@@ -163,32 +163,35 @@ struct Damage {
 	float amount;
 };
 
+enum Stat {
+	SPEED,
+	ACCEL,
+	SIZE,
+	INVALID
+};
+
 struct Condition {
-	enum Priority {
-		Adder      = 0,
-		Multiplier = 1,
-		None       = 2
-	};
+	// Application order
 	enum Type {
+		STAT_ADD,
+		STAT_MULTIPLY,
 		BURN,
 		// FREEZE, // TODO
 		BLEED,
 		POISON,
 		// STUN,   // TODO
-		REGEN,
-		MOD_SPEED,
-		MOD_ACCEL
+		REGEN
 	};
 
-	Priority priority;
 	Type type;
 	/* Condition strength means different things for different conditions.
 	   BURN/BLEED/POISON:    damage in HP/second
 	   REGEN:                heal in HP/second
-	   MOD_SPEED, MOD_ACCEL: amount to add/multiply by based on priority */
+	   STAT_ADD:      what to add to the base stat
+	   STAT_MULTIPLY: what to multiply the (base + additive mods) stat by */
 	float strength;
 	TimeDelta timeLeft;
-	// Contagious?
+	Stat stat = Stat::INVALID;
 
 	bool isExpired() const {
 		return timeLeft <= 0;
@@ -202,12 +205,14 @@ struct Condition {
 			return false;
 			case Type::REGEN:
 			return true;
-			case Type::MOD_SPEED:
-			case Type::MOD_ACCEL:
-			return (priority == Priority::Multiplier) ? strength > 1 : strength > 0;
+			// TODO: giant switch on which stats are good/bad to increase/decrease, oh joy
+			case Type::STAT_ADD:
+			return strength > 0;
+			case Type::STAT_MULTIPLY:
+			return strength > 1;
 		}
 	}
-	bool operator<(const Condition& other) const {return priority < other.priority;}
+	bool operator<(const Condition& other) const {return type < other.type;}
 };
 
 class Collidable;

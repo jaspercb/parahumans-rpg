@@ -436,15 +436,9 @@ void ConditionSystem::recalculateStats(Stats &stats, Conditions &conditions) {
 	memcpy(&stats.stats, &stats.basestats, sizeof(stats.stats));
 	conditions.sort();
 	for (const auto &condition : conditions) {
-		float* var = nullptr;
 		switch (condition.type) {
-			case Condition::Type::MOD_SPEED: var = &stats.stats.speed; break;
-			case Condition::Type::MOD_ACCEL: var = &stats.stats.accel; break;
-			default: continue;
-		}
-		switch (condition.priority) {
-			case Condition::Priority::Adder: *var += condition.strength; break;
-			case Condition::Priority::Multiplier: *var *= condition.strength; break;
+			case Condition::Type::STAT_ADD:      stats[condition.stat] += condition.strength; break;
+			case Condition::Type::STAT_MULTIPLY: stats[condition.stat] *= condition.strength; break;
 			default: continue;
 		}
 	}
@@ -477,7 +471,7 @@ void ControlSystem::receive(const Control_MoveAccelEvent& e) {
 	if (sdata.velocity.x || sdata.velocity.y) {
 		sdata.orientation = atan2f(sdata.velocity.y, sdata.velocity.x);
 	}
-	sdata.velocity *= stats.speed() / (stats.accel() + stats.speed());
+	sdata.velocity *= stats[Stat::SPEED] / (stats[Stat::ACCEL] + stats[Stat::SPEED]);
 	if (!accel.x && !accel.y && sdata.velocity.length() < 1 /*epsilon value*/ ) {
 		sdata.velocity *= 0;
 	}
