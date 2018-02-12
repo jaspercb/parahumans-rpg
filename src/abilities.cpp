@@ -99,7 +99,7 @@ std::shared_ptr<Ability> TestPuckAbility(World* world, Entity owner) {
 		world, owner,
 		std::make_shared<InstantAreaExplosion>(
 			std::make_shared<InstantSingleCondition>(
-				Condition{Condition::Priority::None, Condition::Type::BURN, 3.0, 3.0 /* seconds */}),
+				Condition{Condition::Type::BURN, 3.0, 3.0 /* seconds */}),
 			150),
 		400, 2
 		);

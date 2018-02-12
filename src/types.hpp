@@ -215,11 +215,6 @@ struct Condition {
 	bool operator<(const Condition& other) const {return type < other.type;}
 };
 
-class Collidable;
-struct OnCollision;
-struct Renderable;
-struct TimeOut;
-
 enum KeyMap {
 	MoveUp,
 	MoveDown,
