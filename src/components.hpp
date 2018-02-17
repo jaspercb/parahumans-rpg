@@ -90,6 +90,7 @@ public:
 		basestats[Stat::SPEED]     = speed;
 		basestats[Stat::ACCEL]     = accel;
 		basestats[Stat::SUBJECTIVE_TIME_RATE] = 1.0;
+		basestats[Stat::VULNERABILITY]        = 1.0;
 		for (int damageInt = Damage::Type::Puncture;
 		     damageInt != Damage::Type::SIZE; ++damageInt) {
 			basestats[StatVulnerabilityTo(static_cast<Damage::Type>(damageInt))] = 1.0;

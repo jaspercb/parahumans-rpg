@@ -314,7 +314,7 @@ void DestructibleSystem::receive(const DamagedEvent &e) {
 	auto &destructible = world->registry.get<Destructible>(e.target);
 	if (world->registry.has<Stats>(e.target)) {
 		auto &stats = world->registry.get<Stats>(e.target);
-		damage.amount *= stats[StatVulnerabilityTo(damage.type)];
+		damage.amount *= stats[StatVulnerabilityTo(damage.type)] * stats[Stat::VULNERABILITY];
 	}
 	if (!destructible.indestructible) {
 		destructible.HP -= damage.amount;
