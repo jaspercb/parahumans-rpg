@@ -384,7 +384,7 @@ void InputSystem::update(TimeDelta dt) {
 	}
 
 	world->bus.publish<SDL_Event>(e);
-	world->registry.view<SpatialData, Controllable>().each([this, dt, keys](auto entity, auto &sdata, auto &controllable) {
+	world->registry.view<SpatialData, Controllable>().each([this, keys](auto entity, auto &sdata, auto &controllable) {
 		vec2f accel = {0, 0};
 		if (keys[SDL_SCANCODE_A]) {
 			accel.x -= 1;
@@ -420,17 +420,17 @@ void ConditionSystem::receive(const ConditionEvent& e) {
 void ConditionSystem::update(TimeDelta dt) {
 	world->registry.view<Conditions>().each([dt, this](auto entity, auto &conditions) {
 		Stats* stats = world->registry.has<Stats>(entity) ? &world->registry.get<Stats>(entity) : nullptr;
-		bool conditionExpired = false;
+		TimeDelta subjectivedt = stats ? (*stats)[Stat::SUBJECTIVE_TIME_RATE] * dt : dt;
+		bool conditionsDirty = false;
 		for (auto condition = conditions.begin(); condition != conditions.end(); condition++) {
+			tickCondition(entity, *condition, std::min(condition->timeLeft, condition->ignoreSubjectiveTime ? dt : subjectivedt));
 			if (condition->isExpired()) {
 				condition = conditions.erase(condition);
-				conditionExpired = true;
-			} else {
-				tickCondition(entity, *condition, std::min(condition->timeLeft, dt));
+				conditionsDirty = true;
 			}
 		}
 		if (stats) {
-			if (conditionExpired || stats->dirty) {
+			if (conditionsDirty || stats->dirty) {
 				recalculateStats(*stats, conditions);
 			}
 		}
@@ -513,16 +513,20 @@ void ControlSystem::receive(const Control_UseAbilityEvent& e) {
 
 void AbilitySystem::update(TimeDelta dt) {
 	world->registry.view<AbilityData>().each([dt, this](auto entity, auto &abilitydata) {
+		Stats* stats = world->registry.has<Stats>(entity) ? &world->registry.get<Stats>(entity) : nullptr;
+		TimeDelta subjectivedt = stats ? (*stats)[Stat::SUBJECTIVE_TIME_RATE] * dt : dt;
 		for (auto &ability : abilitydata.abilities) {
-			ability->update(dt);
+			ability->update(subjectivedt);
 		}
 	});
 }
 
 void TimeOutSystem::update(TimeDelta dt) {
 	std::vector<Entity> destroyed;
-	world->registry.view<TimeOut>().each([dt, &destroyed](auto entity, auto &timeout) {
-		timeout.timeLeft -= dt;
+	world->registry.view<TimeOut>().each([this, dt, &destroyed](auto entity, auto &timeout) {
+		Stats* stats = world->registry.has<Stats>(entity) ? &world->registry.get<Stats>(entity) : nullptr;
+		TimeDelta subjectivedt = stats ? (*stats)[Stat::SUBJECTIVE_TIME_RATE] * dt : dt;
+		timeout.timeLeft -= subjectivedt;
 		if (timeout.isExpired()) {
 			destroyed.push_back(entity);
 		} 

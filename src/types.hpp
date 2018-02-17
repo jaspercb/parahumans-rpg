@@ -166,6 +166,7 @@ struct Damage {
 enum Stat {
 	SPEED,
 	ACCEL,
+	SUBJECTIVE_TIME_RATE,
 	VULNERABILITY_PUNCTURE,
 	VULNERABILITY_SLASH,
 	VULNERABILITY_IMPACT,
@@ -199,6 +200,7 @@ struct Condition {
 	float strength;
 	TimeDelta timeLeft;
 	Stat stat = Stat::INVALID;
+	bool ignoreSubjectiveTime = false;
 
 	bool isExpired() const {
 		return timeLeft <= 0;

@@ -87,8 +87,9 @@ private:
 	bool dirty;
 public:
 	Stats(float speed, float accel) {
-		basestats[Stat::SPEED] = speed;
-		basestats[Stat::ACCEL] = accel;
+		basestats[Stat::SPEED]     = speed;
+		basestats[Stat::ACCEL]     = accel;
+		basestats[Stat::SUBJECTIVE_TIME_RATE] = 1.0;
 		for (int damageInt = Damage::Type::Puncture;
 		     damageInt != Damage::Type::SIZE; ++damageInt) {
 			basestats[StatVulnerabilityTo(static_cast<Damage::Type>(damageInt))] = 1.0;
