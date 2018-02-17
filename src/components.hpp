@@ -92,8 +92,6 @@ public:
 	}
 	float& operator[](Stat stat) { return stats[stat]; }
 	float  operator[](Stat stat) const { return stats[stat]; }
-	float speed() const { return (*this)[Stat::SPEED]; }
-	float accel() const { return (*this)[Stat::ACCEL]; }
 };
 
 struct Conditions : public std::list<Condition> {};

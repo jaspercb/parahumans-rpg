@@ -59,7 +59,7 @@ void RenderSystem::renderEntity(Entity entity) {
 		case Renderable::Type::Person: {
 			const auto& stats = world->registry.get<Stats>(entity);
 			vec2f orientation= {0, 1};
-			float walkspeed = stats.speed() * 0.065;
+			float walkspeed = stats[Stat::SPEED] * 0.065;
 			orientation.rotate(sdata.orientation);
 			float phase = sdata.timeMoving;
 			float depthy = _viewxform->screenCoordFromGlobal(orientation).y;
@@ -469,15 +469,17 @@ void CollisionHandlerSystem::handle(Entity source, Entity target) {
 void ControlSystem::receive(const Control_MoveAccelEvent& e) {
 	SpatialData& sdata = world->registry.get<SpatialData>(e.entity);
 	const Stats& stats = world->registry.get<Stats>(e.entity);
-	vec2f accel = e.accel;
-	accel.normalize();
-	accel *= stats.accel();
-	sdata.velocity += accel;
+	const float accel = stats[Stat::ACCEL];
+	const float speed = stats[Stat::SPEED];
+	vec2f accelvector = e.accel;
+	accelvector.normalize();
+	accelvector *= accel;
+	sdata.velocity += accelvector;
 	if (sdata.velocity.x || sdata.velocity.y) {
 		sdata.orientation = atan2f(sdata.velocity.y, sdata.velocity.x);
 	}
-	sdata.velocity *= stats[Stat::SPEED] / (stats[Stat::ACCEL] + stats[Stat::SPEED]);
-	if (!accel.x && !accel.y && sdata.velocity.length() < 1 /*epsilon value*/ ) {
+	sdata.velocity *= speed / (accel + speed);
+	if (!accelvector.x && !accelvector.y && sdata.velocity.length() < 1 /*epsilon value*/ ) {
 		sdata.velocity *= 0;
 	}
 }
