@@ -12,7 +12,8 @@ Entity BasicProjectileAbility::makeProjectile(vec2f position, vec2f target) {
 	velocity.truncate(mProjectileSpeed);
 	Entity projectile = mWorld->registry.create();
 	mWorld->registry.assign<SpatialData>(projectile, position, velocity, 20 /* z */);
-	mWorld->registry.assign<Renderable>(projectile);
+	auto &renderable = mWorld->registry.assign<Renderable>(projectile);
+	renderable.circle_radius = mProjectileRadius;
 	auto &collidable = mWorld->registry.assign<Collidable>(projectile, Collidable::Circle, mProjectileRadius, 1 /* collisions until destroyed */);
 	collidable.addIgnored(mOwner);
 	auto &oncollision = mWorld->registry.assign<OnCollision>(projectile);
@@ -61,7 +62,8 @@ void PuckAbility::onKeyDown(vec2f target) {
 		velocity.truncate(mProjectileSpeed);
 		Entity projectile = mWorld->registry.create();
 		mWorld->registry.assign<SpatialData>(projectile, sdata.position, velocity, 20 /* z */);
-		mWorld->registry.assign<Renderable>(projectile);
+		auto &renderable = mWorld->registry.assign<Renderable>(projectile);
+		renderable.circle_radius = 15;
 		mWorld->registry.assign<TimeOut>(projectile, mProjectileDuration);
 		mProjectile = projectile;
 	}
@@ -77,7 +79,7 @@ void FlashAbility::onKeyDown(vec2f target) {
 }
 
 std::shared_ptr<Ability> TestProjectileAbility(World* world, Entity owner) {
-	return std::make_shared<BasicProjectileAbility>(world, owner, std::make_shared<InstantSingleDamage>(Damage{Damage::Type::Impact, 10}), 500, 50);
+	return std::make_shared<BasicProjectileAbility>(world, owner, std::make_shared<InstantSingleDamage>(Damage{Damage::Type::Impact, 10}), 500, 10);
 }
 
 std::shared_ptr<Ability> TestBuffAbility(World* world, Entity owner, Condition condition) {
@@ -106,5 +108,5 @@ std::shared_ptr<Ability> TestPuckAbility(World* world, Entity owner) {
 }
 
 std::shared_ptr<Ability> TestHeartseekerAbility(World* world, Entity owner) {
-	return std::make_shared<HeartseekerAbility>(world, owner, std::make_shared<InstantSingleDamage>(Damage{Damage::Type::Impact, 10}), 500, 50);
+	return std::make_shared<HeartseekerAbility>(world, owner, std::make_shared<InstantSingleDamage>(Damage{Damage::Type::Impact, 10}), 700, 5);
 }

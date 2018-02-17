@@ -38,6 +38,11 @@ void RenderSystem::renderEntity(Entity entity) {
 	const auto &renderable = world->registry.get<Renderable>(entity);
 	vec2f fpos = _viewxform->screenCoordFromGlobal(sdata.position);
 	vec2i ipos = {fpos.x, fpos.y};
+	// hitbox
+	if (world->registry.has<Collidable>(entity)) {
+		const auto &collidable = world->registry.get<Collidable>(entity);
+		ellipseColor(_renderer, ipos.x, ipos.y, _viewxform->scale * collidable.circle_radius, _viewxform->scale * collidable.circle_radius / 1.73, SDL_ColortoUint32(SDL_Colors::GREEN));
+	}
 	ipos.y -= sdata.z;
 	switch(renderable.type) {
 		case Renderable::Type::Circle: {
