@@ -3,11 +3,23 @@
 #include "sdlTools.hpp"
 #include "abilities.hpp"
 
-
 #include <unistd.h>
 #include <iostream>
 
 #include <map>
+
+Stat StatVulnerabilityTo(Damage::Type damagetype) {
+	switch(damagetype) {
+	case Damage::Type::Puncture:    return Stat::VULNERABILITY_PUNCTURE;
+	case Damage::Type::Slash:       return Stat::VULNERABILITY_SLASH;
+	case Damage::Type::Impact:      return Stat::VULNERABILITY_IMPACT;
+	case Damage::Type::Heat:        return Stat::VULNERABILITY_HEAT;
+	case Damage::Type::Cold:        return Stat::VULNERABILITY_COLD;
+	case Damage::Type::Electricity: return Stat::VULNERABILITY_ELECTRICITY;
+	case Damage::Type::Toxin:       return Stat::VULNERABILITY_TOXIN;
+	default:                        return Stat::INVALID;
+	}
+}
 
 void MovementSystem::update(TimeDelta dt) {
 	world->registry.view<SpatialData>().each([dt, this](auto entity, auto &sdata) {
@@ -296,12 +308,16 @@ void CollisionSystem::update(TimeDelta dt) {
 }
 
 void DestructibleSystem::receive(const DamagedEvent &e) {
-	// TODO: Pay attention to damage types, source
-	std::cout<<"DestructibleSystem::receive(DamagedEvent), amount="<<e.damage.amount<<std::endl;
+	Damage damage = e.damage;
+	std::cout<<"DestructibleSystem::receive(DamagedEvent), amount="<<damage.amount<<std::endl;
 	if (!world->registry.has<Destructible>(e.target)) return;
 	auto &destructible = world->registry.get<Destructible>(e.target);
+	if (world->registry.has<Stats>(e.target)) {
+		auto &stats = world->registry.get<Stats>(e.target);
+		damage.amount *= stats[StatVulnerabilityTo(damage.type)];
+	}
 	if (!destructible.indestructible) {
-		destructible.HP -= e.damage.amount;
+		destructible.HP -= damage.amount;
 	}
 	if (destructible.HP <= 0) {
 		mToDestroy.insert(e.target);

@@ -78,6 +78,8 @@ class OrganicStats {
 
 class ConditionSystem;
 
+Stat StatVulnerabilityTo(Damage::Type damagetype);
+
 class Stats {
 friend ConditionSystem;
 private:
@@ -87,6 +89,10 @@ public:
 	Stats(float speed, float accel) {
 		basestats[Stat::SPEED] = speed;
 		basestats[Stat::ACCEL] = accel;
+		for (int damageInt = Damage::Type::Puncture;
+		     damageInt != Damage::Type::SIZE; ++damageInt) {
+			basestats[StatVulnerabilityTo(static_cast<Damage::Type>(damageInt))] = 1.0;
+		}
 		stats = basestats;
 		dirty = false;
 	}
