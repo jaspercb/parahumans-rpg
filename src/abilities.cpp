@@ -14,7 +14,7 @@ Entity BasicProjectileAbility::makeProjectile(vec2f position, vec2f target) {
 	mWorld->registry.assign<SpatialData>(projectile, position, velocity, 20 /* z */);
 	auto &renderable = mWorld->registry.assign<Renderable>(projectile);
 	renderable.circle_radius = mProjectileRadius;
-	auto &collidable = mWorld->registry.assign<Collidable>(projectile, Collidable::Circle, mProjectileRadius, 1 /* collisions until destroyed */);
+	auto &collidable = mWorld->registry.assign<Collidable>(projectile, CircleCollidable(mProjectileRadius, 1 /* collisions until destroyed */));
 	collidable.addIgnored(mOwner);
 	auto &oncollision = mWorld->registry.assign<OnCollision>(projectile);
 	oncollision.callbacks.push_back(mInstantSingleEffect);

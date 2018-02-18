@@ -5,6 +5,7 @@
 #include <vector>
 #include <array>
 
+#include "abilities.hpp"
 #include "sdlTools.hpp"
 #include "types.hpp"
 
@@ -106,12 +107,18 @@ struct Conditions : public std::list<Condition> {};
 
 struct Collidable {
 	enum Type {
-		Circle
+		// A circle's position is its center
+		Circle,
+		// A rectangle's position is its upper-left corner
+		Rectangle
 	};
 	Type type;
 	union {
 		struct {
 			float circle_radius;
+		};
+		struct {
+			float rectangle_height, rectangle_width;
 		};
 	};
 	 // How many collisions until this entity should be destroyed. -1 means "never delete"
@@ -134,6 +141,10 @@ struct Collidable {
 		ignored.insert(other);
 	}
 };
+
+Collidable CircleCollidable(float radius, int collisionsUntilDestroyed=-1, TimeDelta timeUntilCollidable=0.0);
+
+Collidable RectangleCollidable(float width, float height, int collisionsUntilDestroyed=-1, TimeDelta timeUntilCollidable=0.0);
 
 struct Destructible {
 	Destructible(HPType maxHP, bool indestructible=false, bool healable=true)

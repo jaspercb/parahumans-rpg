@@ -202,18 +202,58 @@ bool CollisionSystem::collides(Entity one, Entity two) const {
 	return _collides(spatial1, collide1, spatial2, collide2);
 }
 
+namespace {
+
+bool CircleCollidesCircle(const SpatialData &spatial1,
+                          const Collidable  &collide1,
+                          const SpatialData &spatial2,
+                          const Collidable  &collide2) {
+	return spatial1.position.dist(spatial2.position) < collide1.circle_radius + collide2.circle_radius;
+}
+
+bool CircleCollidesRect(const SpatialData &spatial1,
+                      const Collidable  &collide1,
+                      const SpatialData &spatial2,
+                      const Collidable  &collide2) {
+	// Find the point in the rectangle closest to the circle
+	float x = std::clamp(spatial1.position.x, spatial2.position.x, spatial2.position.x + collide2.rectangle_width);
+	float y = std::clamp(spatial1.position.y, spatial2.position.y, spatial2.position.y + collide2.rectangle_height);
+	// Check if that point is in the circle
+	return vec2f{x, y}.dist(spatial1.position) < collide1.circle_radius;
+}
+
+bool RectCollidesRect(const SpatialData &spatial1,
+                      const Collidable  &collide1,
+                      const SpatialData &spatial2,
+                      const Collidable  &collide2) {
+	return (spatial1.position.x < spatial2.position.x + collide2.rectangle_width
+		 && spatial2.position.x < spatial1.position.x + collide1.rectangle_width
+		 && spatial1.position.y < spatial2.position.y + collide2.rectangle_height
+		 && spatial2.position.y < spatial1.position.y + collide1.rectangle_height);
+}
+} // namespace
+
 bool CollisionSystem::_collides(const SpatialData &spatial1,
                                 const Collidable  &collide1,
                                 const SpatialData &spatial2,
                                 const Collidable  &collide2) {
+	// TODO: 3D collisions
 	switch (collide1.type) {
 	case Collidable::Type::Circle:
 		switch(collide2.type) {
 		case Collidable::Type::Circle:
-			// TODO: 3D collisions
-			return spatial1.position.dist(spatial2.position) < collide1.circle_radius + collide2.circle_radius;
+			return CircleCollidesCircle(spatial1, collide1, spatial2, collide2);
+		case Collidable::Type::Rectangle:
+			return CircleCollidesRect(spatial1, collide1, spatial2, collide2);
 		}
-		// TODO: rectangle-circle collisions
+		break;
+	case Collidable::Type::Rectangle:
+		switch(collide2.type) {
+		case Collidable::Type::Rectangle:
+			return RectCollidesRect(spatial1, collide1, spatial2, collide2);
+		case Collidable::Type::Circle:
+			return CircleCollidesRect(spatial2, collide2, spatial1, collide1);
+		}
 		break;
 	}
 	assert(false);
