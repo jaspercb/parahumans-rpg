@@ -40,6 +40,21 @@ public:
 		world.addSystem(std::make_shared<CameraTrackingSystem>(&viewxform));
 		world.addSystem(std::make_shared<RenderSystem>(renderer, &viewxform));
 
+		// Tile system
+		if (true) {
+			auto entity = world.registry.create();
+			auto &tiles = world.registry.attach<TileLayout>(entity);
+			tiles.gridwidth = 100;
+			for (int x=-100; x<100; x++) {
+				for (int y=-100; y<100; y++) {
+					tiles[vec2i{x, y}]; // default initializes to non-collidable
+					if (x % 10 == 5 || y % 10 == 5) {
+						tiles[vec2i{x, y}].collides = true;
+					}
+				}
+			}
+		}
+
 		for (int i=0; i<1; i++) {
 			auto entity = world.registry.create();
 			world.registry.assign<SpatialData>(entity, vec2f{0, 0});
@@ -70,11 +85,11 @@ public:
 		}
 		// floor
 		/*
-		for (int x=0; x<20; x++) {
-		for (int y=0; y<20; y++) {
+		for (int x=0; x<5; x++) {
+		for (int y=0; y<5; y++) {
 			auto entity = world.registry.create();
 			world.registry.assign<SpatialData>(entity, vec2f{50.0*x, 50.0*y}, vec2f{0, 0}, -50.0);
-			world.registry.assign<Renderable>(entity, Renderable::Type::Cube);
+			world.registry.assign<Renderable>(entity, Renderable::Type::RectangularPrism);
 			}
 		}
 		*/

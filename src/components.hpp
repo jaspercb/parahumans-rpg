@@ -1,6 +1,7 @@
 #pragma once
 
 #include <unordered_set>
+#include <map>
 #include <list>
 #include <vector>
 #include <array>
@@ -34,10 +35,10 @@ struct Renderable {
 		Circle,
 		Line,
 		Person,
-		Cube
+		RectangularPrism
 	};
 
-	Renderable(Type type=Circle, SDL_Color color=SDL_Colors::RED, float radius=10, int x=0, int y=0) :
+	Renderable(Type type=Circle, SDL_Color color=SDL_Colors::RED, float radius=10, float x=0, float y=0) :
 		type(type),
 		color(color),
 		line_thickness(radius),
@@ -59,7 +60,7 @@ struct Renderable {
 			float line_displacement_y;
 		};
 		struct {
-			float cube_x, cube_y, cube_z;
+			float rectangle_x, rectangle_y, rectangle_z;
 		};
 	};
 };
@@ -126,10 +127,12 @@ struct Collidable {
 	TimeDelta timeUntilCollidable;
 	// Whether we want to add an entity to our ignore list after colliding
 	bool ignoreRepeatCollisions;
+	bool collidesWithTiles = true;
 	std::unordered_set<Entity> ignored;
 
-	Collidable(Type type, float arg1, int collisionsUntilDestroyed=-1, TimeDelta timeUntilCollidable=0.0)
-		: type(type), circle_radius(arg1), collisionsUntilDestroyed(collisionsUntilDestroyed), timeUntilCollidable(timeUntilCollidable) {}
+	Collidable(Type type, float arg1, int collisionsUntilDestroyed=-1, TimeDelta timeUntilCollidable=0.0, bool collidesWithTiles=true)
+		: type(type), circle_radius(arg1), collisionsUntilDestroyed(collisionsUntilDestroyed), timeUntilCollidable(timeUntilCollidable),
+		collidesWithTiles(collidesWithTiles) {}
 
 	bool canCollide(Entity other) const {
 		return (timeUntilCollidable <= 0.0
@@ -175,5 +178,21 @@ struct TimeOut {
 	TimeDelta timeLeft;
 	bool isExpired() const {
 		return timeLeft <= 0;
+	}
+};
+
+struct TileLayout {
+	struct Tile {
+		bool collides = false;
+	};
+	int gridwidth;
+	std::map<vec2i, Tile> tiles;
+
+	Tile& operator[](const vec2i pos) {
+		return tiles[pos];
+	}
+
+	const vec2i getGridCoords(vec2f pos) const {
+		return {std::floor(pos.x/gridwidth), std::floor(pos.y/gridwidth)};
 	}
 };

@@ -16,13 +16,13 @@ SOURCES := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT) -not -name "*main.cp
 OBJECTS := $(patsubst $(SRCDIR)/%, $(BUILDDIR)/%, $(SOURCES:.$(SRCEXT)=.o))
 TESTSOURCES := $(shell find $(TESTDIR) -type f -name *.$(SRCEXT) -not -name "*tester.cpp")
 TESTOBJECTS := $(patsubst $(TESTDIR)/%, $(BUILDDIR)/test/%, $(TESTSOURCES:.$(SRCEXT)=.o))
-CFLAGS := -std=c++17 -g -O0 -Wall -Wno-narrowing
+CFLAGS := -std=c++17 -g -O3 -Wall -Wno-narrowing
 LIB := -lSDL2
 TESTLIBS :=  -lgtest -lgtest_main -lpthread
 INC := -I include -I lib
 
-bin/client: $(OBJECTS)
-	@echo "    Linking... $(ccbold)$(TARGET)$(ccend)"; $(CC) $(CFLAGS) $^ src/main.cpp -o $(TARGET) $(LIB);
+bin/client: $(OBJECTS) build/main.o
+	@echo "    Linking... $(ccbold)$(TARGET)$(ccend)"; $(CC) $(CFLAGS) $^ -o $(TARGET) $(LIB);
 
 run: bin/client
 	./bin/client

@@ -64,6 +64,7 @@ public:
 	void renderEntity(Entity entity);
 	void update(TimeDelta dt) override;
 private:
+	void renderRectangularPrism(const SpatialData& sdata, const Renderable& renderable);
 	SDL_Renderer* _renderer;
 	TimeDelta timeSinceStart;
 	const ViewTransform* _viewxform;
@@ -98,9 +99,14 @@ private:
 	bool isWatching(Entity e) const {
 		return mGridCoords.find(e) != mGridCoords.end();
 	}
-	static bool _collides(const SpatialData &spatial1, const Collidable &collide1,
-                          const SpatialData &spatial2, const Collidable &collide2);
+	static bool _collides(
+		const SpatialData &spatial1, const Collidable &collide1,
+		const SpatialData &spatial2, const Collidable &collide2);
+	bool isCollidingWithTile(
+		const SpatialData& spatial, const Collidable& collidable,
+		TileLayout& layout);
 	std::unordered_set<Entity> mToDestroy;
+	std::unordered_set<Entity> mPotentiallyMoved;
 };
 
 class DestructibleSystem : public System {
@@ -149,6 +155,7 @@ struct ControlSystem : public System {
 	void receive(const Control_UseAbilityEvent& e);
 };
 
+// Manages ability cooldowns.
 struct AbilitySystem : public System {
 	AbilitySystem() {};
 	void update(TimeDelta dt) override;

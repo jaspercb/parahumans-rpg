@@ -45,9 +45,52 @@ void renderOvalOffset(SDL_Renderer* renderer, const ViewTransform* view, vec2i i
 	ellipseColor(renderer, screenpos.x, screenpos.y - scale*height, int(rx*scale), int(ry*scale), SDL_ColortoUint32(SDL_Colors::BLACK));
 }
 
+void RenderSystem::renderRectangularPrism(const SpatialData& sdata, const Renderable& renderable) {
+	// Too slow :(
+	// TODO: add scale dependency
+	ViewTransform zerotransform = *_viewxform;
+	zerotransform.viewcenter = {0, 0};
+	vec2f fpos = _viewxform->screenCoordFromGlobal(sdata.position);
+	vec2i ipos = {fpos.x, fpos.y};
+	vec2f xstep = {-renderable.rectangle_x, 0};
+	xstep = zerotransform.viewCoordFromGlobal(xstep);
+	vec2f ystep = {0, -renderable.rectangle_y};
+	ystep = zerotransform.viewCoordFromGlobal(ystep);
+	float height = renderable.rectangle_z;
+	Sint16 vx[4];
+	Sint16 vy[4];
+	vx[0] = ipos.x;
+	vy[0] = ipos.y;
+	vx[1] = ipos.x;
+	vy[1] = ipos.y - height;
+	vx[2] = ipos.x + xstep.x;
+	vy[2] = ipos.y + xstep.y - height;
+	vx[3] = ipos.x + xstep.x;
+	vy[3] = ipos.y + xstep.y;
+
+	filledPolygonColor(_renderer, vx, vy, 4, SDL_ColortoUint32(SDL_Colors::LIGHTGREY));
+	polygonColor(_renderer, vx, vy, 4, SDL_ColortoUint32(SDL_Colors::BLACK));
+
+	vx[2] = ipos.x + ystep.x;
+	vy[2] = ipos.y + ystep.y - height;
+	vx[3] = ipos.x + ystep.x;
+	vy[3] = ipos.y + ystep.y;
+
+	filledPolygonColor(_renderer, vx, vy, 4, SDL_ColortoUint32(SDL_Colors::LIGHTGREY));
+	polygonColor(_renderer, vx, vy, 4, SDL_ColortoUint32(SDL_Colors::BLACK));
+
+	vx[0] = ipos.x + xstep.x;
+	vy[0] = ipos.y + xstep.y - height;
+	vx[3] = ipos.x + ystep.x + xstep.x;
+	vy[3] = ipos.y + ystep.y + xstep.y - height;
+
+	filledPolygonColor(_renderer, vx, vy, 4, SDL_ColortoUint32(SDL_Colors::LIGHTGREY));
+	polygonColor(_renderer, vx, vy, 4, SDL_ColortoUint32(SDL_Colors::BLACK));
+}
+
 void RenderSystem::renderEntity(Entity entity) {
-	const auto &sdata = world->registry.get<SpatialData>(entity);
-	const auto &renderable = world->registry.get<Renderable>(entity);
+	const auto& sdata = world->registry.get<SpatialData>(entity);
+	const auto& renderable = world->registry.get<Renderable>(entity);
 	vec2f fpos = _viewxform->screenCoordFromGlobal(sdata.position);
 	vec2i ipos = {fpos.x, fpos.y};
 	// hitbox
@@ -94,46 +137,9 @@ void RenderSystem::renderEntity(Entity entity) {
 			}
 			break;
 		}
-		case Renderable::Type::Cube:
+		case Renderable::Type::RectangularPrism:
 		{
-			break; // TOO SLOW
-			// TODO: add scale dependency
-			float width = 50;
-			vec2f xstep = {-width, 0};
-			xstep = _viewxform->screenCoordFromGlobal(xstep);
-			vec2f ystep = {0, -width};
-			ystep = _viewxform->screenCoordFromGlobal(ystep);
-			Sint16 vx[4];
-			Sint16 vy[4];
-			vx[0] = ipos.x;
-			vy[0] = ipos.y;
-			vx[1] = ipos.x;
-			vy[1] = ipos.y - width;
-			vx[2] = ipos.x + xstep.x;
-			vy[2] = ipos.y + xstep.y - width;
-			vx[3] = ipos.x + xstep.x;
-			vy[3] = ipos.y + xstep.y;
-
-			filledPolygonColor(_renderer, vx, vy, 4, SDL_ColortoUint32(SDL_Colors::LIGHTGREY));
-			polygonColor(_renderer, vx, vy, 4, SDL_ColortoUint32(SDL_Colors::BLACK));
-
-			vx[2] = ipos.x + ystep.x;
-			vy[2] = ipos.y + ystep.y - width;
-			vx[3] = ipos.x + ystep.x;
-			vy[3] = ipos.y + ystep.y;
-
-			filledPolygonColor(_renderer, vx, vy, 4, SDL_ColortoUint32(SDL_Colors::LIGHTGREY));
-			polygonColor(_renderer, vx, vy, 4, SDL_ColortoUint32(SDL_Colors::BLACK));
-
-			vx[0] = ipos.x + xstep.x;
-			vy[0] = ipos.y + xstep.y - width;
-			vx[3] = ipos.x + ystep.x + xstep.x;
-			vy[3] = ipos.y + ystep.y + xstep.y - width;
-
-			filledPolygonColor(_renderer, vx, vy, 4, SDL_ColortoUint32(SDL_Colors::LIGHTGREY));
-			polygonColor(_renderer, vx, vy, 4, SDL_ColortoUint32(SDL_Colors::BLACK));
-
-
+			renderRectangularPrism(sdata, renderable);
 		}
 	}
 	// render HP bar if needed
@@ -153,13 +159,51 @@ void RenderSystem::update(TimeDelta dt) {
 	SDL_SetRenderDrawColor(_renderer, 255, 255, 255, 255); // white
 	SDL_RenderClear(_renderer);
 
+	// Draw collidable walls
+	{
+	auto& tiles = world->registry.get<TileLayout>();
+	vec2i screenEdgeTileCoords[4];
+	float screenwidth  = _viewxform->screensize.x;
+	float screenheight = _viewxform->screensize.y;
+	screenEdgeTileCoords[0] = tiles.getGridCoords(_viewxform->globalCoordFromScreen(vec2f{0, 0}));
+	screenEdgeTileCoords[1] = tiles.getGridCoords(_viewxform->globalCoordFromScreen(vec2f{0, screenheight}));
+	screenEdgeTileCoords[2] = tiles.getGridCoords(_viewxform->globalCoordFromScreen(vec2f{screenwidth, 0}));
+	screenEdgeTileCoords[3] = tiles.getGridCoords(_viewxform->globalCoordFromScreen(vec2f{screenwidth, screenheight}));
+	int minx = screenEdgeTileCoords[0].x;
+	int miny = screenEdgeTileCoords[0].y;
+	int maxx = minx;
+	int maxy = miny;
+	for (int i=1; i<4; i++) {
+		minx = std::min(minx, screenEdgeTileCoords[i].x);
+		miny = std::min(miny, screenEdgeTileCoords[i].y);
+		maxx = std::max(maxx, screenEdgeTileCoords[i].x);
+		maxy = std::max(maxy, screenEdgeTileCoords[i].y);
+	}
+	SpatialData sdata;
+	Renderable renderable;
+	renderable.type = Renderable::Type::RectangularPrism;
+	renderable.rectangle_x = tiles.gridwidth;
+	renderable.rectangle_y = tiles.gridwidth;
+	renderable.rectangle_z = 0;
+
+	for (int x = minx; x <= maxx; x++) {
+		for (int y = miny; y <= maxy; y++) {
+			if(tiles[vec2i{x, y}].collides) {
+				sdata.position = tiles.gridwidth * vec2i{x+1, y+1};
+				renderRectangularPrism(sdata, renderable);
+			}
+		}
+	}
+	}
+
 	// distance from camera -> renderable
 	std::multimap<float, Entity> drawqueue;
 
 	world->registry.view<SpatialData, Renderable>().each([dt, this, &drawqueue](Entity entity, SpatialData &sdata, Renderable &renderable) {
 		switch(renderable.type) {
 			// Different renderables have a different effective z-buffer for back-to-front painting
-			case Renderable::Type::Cube:
+			case Renderable::Type::RectangularPrism:
+				// TODO: correct math
 				drawqueue.emplace(sdata.position.x - 25 + sdata.position.y - 25 + sdata.z, entity);
 				break;
 			default:
@@ -180,7 +224,8 @@ void CameraTrackingSystem::update(TimeDelta dt) {
 	const static float CATCHUP_SPEED = 0.07;
 	if (!world->registry.has<CameraFocus>()) return;
 	Entity attachee = world->registry.attachee<CameraFocus>();
-	const auto& spatial = world->registry.get<SpatialData>(attachee); 
+	const auto& spatial = world->registry.get<SpatialData>(attachee);
+	std::cout<<spatial.position.x << " " << spatial.position.y <<std::endl;
 	vec2f diff = spatial.position + VELOCITY_WEIGHTING * spatial.velocity - _viewxform->viewcenter;
 	_viewxform->viewcenter += CATCHUP_SPEED * diff;
 }
@@ -261,13 +306,7 @@ bool CollisionSystem::_collides(const SpatialData &spatial1,
 }
 
 void CollisionSystem::receive(const MovedEvent &e) {
-	auto oldGridCoords = getGridCoords(e.oldPos);
-	auto newGridCoords = getGridCoords(e.newPos);
-	if (oldGridCoords != newGridCoords) {
-		mSpatialHash[oldGridCoords].erase(e.entity);
-		mSpatialHash[newGridCoords].insert(e.entity);
-		mGridCoords[e.entity] = newGridCoords;
-	}
+	mPotentiallyMoved.insert(e.entity);
 }
 
 void CollisionSystem::receive(const EntityDestroyedEvent &e) {
@@ -279,21 +318,76 @@ void CollisionSystem::receive(const EntityDestroyedEvent &e) {
 }
 
 void CollisionSystem::receive(const CollidedEvent &e) {
-	auto& collide1 = world->registry.get<Collidable>(e.one);
-	auto& collide2 = world->registry.get<Collidable>(e.two);
-	if (collide1.ignoreRepeatCollisions)
-		collide1.addIgnored(e.two);
-	if (collide2.ignoreRepeatCollisions)
-		collide2.addIgnored(e.one);
-	collide1.collisionsUntilDestroyed = std::max(-1, collide1.collisionsUntilDestroyed-1);
-	collide2.collisionsUntilDestroyed = std::max(-1, collide2.collisionsUntilDestroyed-1);
-	if (collide1.collisionsUntilDestroyed == 0)
-		mToDestroy.insert(e.one);
-	if (collide2.collisionsUntilDestroyed == 0)
-		mToDestroy.insert(e.two);
+	if (world->registry.has<Collidable>(e.one)) {
+		auto& collide1 = world->registry.get<Collidable>(e.one);
+		if (collide1.ignoreRepeatCollisions)
+			collide1.addIgnored(e.two);
+		collide1.collisionsUntilDestroyed = std::max(-1, collide1.collisionsUntilDestroyed-1);
+		if (collide1.collisionsUntilDestroyed == 0)
+			mToDestroy.insert(e.one);		
+	}
+	if (world->registry.has<Collidable>(e.two)) {
+		auto& collide2 = world->registry.get<Collidable>(e.two);
+		if (collide2.ignoreRepeatCollisions)
+			collide2.addIgnored(e.one);
+		collide2.collisionsUntilDestroyed = std::max(-1, collide2.collisionsUntilDestroyed-1);
+		if (collide2.collisionsUntilDestroyed == 0)
+			mToDestroy.insert(e.two);
+	}
+}
+
+
+bool CollisionSystem::isCollidingWithTile(const SpatialData& spatial, const Collidable& collidable, TileLayout& tiles) {
+	vec2i topleft, bottomright;
+	switch (collidable.type) {
+	case Collidable::Type::Circle:
+		topleft     = tiles.getGridCoords(spatial.position - collidable.circle_radius);
+		bottomright = tiles.getGridCoords(spatial.position + collidable.circle_radius);
+		break;
+	case Collidable::Type::Rectangle:
+		topleft     = tiles.getGridCoords(spatial.position);
+		bottomright = tiles.getGridCoords(spatial.position + vec2i{collidable.rectangle_width,
+		                                                           collidable.rectangle_height});
+		break;
+	default:
+		assert(false); // unhandled case;
+	}
+	SpatialData tilespatial;
+	Collidable tilecollidable(Collidable::Type::Rectangle, 0);
+	tilecollidable.rectangle_height = tiles.gridwidth;
+	tilecollidable.rectangle_width  = tiles.gridwidth;
+	for (int x = topleft.x; x <= bottomright.x; x++) {
+		for (int y = topleft.y; y <= bottomright.y; y++) {
+			tilespatial.position = {tiles.gridwidth * x, tiles.gridwidth * y};
+			if (tiles[vec2i{x, y}].collides &&
+			    _collides(tilespatial, tilecollidable, spatial, collidable)) return true;
+		}
+	}
+	return false;
 }
 
 void CollisionSystem::update(TimeDelta dt) {
+	// Resolve tile quirks.
+	auto& tiles = world->registry.get<TileLayout>();
+	world->registry.view<SpatialData, Collidable>().each([this, &tiles, dt](auto entity, auto &spatial, const auto &collidable) {
+		bool fix = false;
+		while (isCollidingWithTile(spatial, collidable, tiles)) {
+			spatial.velocity.truncate(0.1 * tiles.gridwidth);
+			// Quick hacky solution: rewind the movement that created the collision.
+			// TODO: Less hacky collision resolution. Maybe wait to see which collision geometry is common?
+			spatial.position -= spatial.velocity * dt;
+			fix = true;
+		}
+		if (fix) {
+			auto nullentity = world->registry.create();
+			world->bus.publish<CollidedEvent>(entity, nullentity);
+			spatial.velocity = {0, 0};
+			mPotentiallyMoved.insert(entity);
+			world->registry.destroy(nullentity);
+			std::cout<<"FIXED IT YO"<<std::endl;
+		}
+	});
+
 	// add all relevant things to the collision map
 	world->registry.view<SpatialData, Collidable>().each([this](auto entity, const auto &spatial, const auto &collidable) {
 		if (!isWatching(entity)) {
@@ -302,6 +396,17 @@ void CollisionSystem::update(TimeDelta dt) {
 			mGridCoords[entity] = gridCoords;
 		}
 	});
+	for (auto &entity : mPotentiallyMoved) {
+		auto oldGridCoords = mGridCoords[entity];
+		const auto &spatial = world->registry.get<SpatialData>(entity);
+		auto newGridCoords = getGridCoords(spatial.position);
+		if (oldGridCoords != newGridCoords) {
+			mSpatialHash[oldGridCoords].erase(entity);
+			mSpatialHash[newGridCoords].insert(entity);
+			mGridCoords[entity] = newGridCoords;
+		}
+	}
+	mPotentiallyMoved.clear();
 
 	auto checkAndHandleCollisions = [this](Entity e1, Entity e2) {
 		if (collides(e1, e2)) {
