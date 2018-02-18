@@ -24,9 +24,9 @@ Stat StatVulnerabilityTo(Damage::Type damagetype) {
 void MovementSystem::update(TimeDelta dt) {
 	world->registry.view<SpatialData>().each([dt, this](auto entity, auto &sdata) {
 		auto oldpos = sdata.position;
-		sdata.position.x += sdata.velocity.x * dt;
-		sdata.position.y += sdata.velocity.y * dt;
 		if (sdata.isMoving()) {
+			sdata.position.x += sdata.velocity.x * dt;
+			sdata.position.y += sdata.velocity.y * dt;
 			sdata.timeMoving += dt;
 			world->bus.publish<MovedEvent>(entity, oldpos, sdata.position);
 		}
@@ -96,7 +96,7 @@ void RenderSystem::renderEntity(Entity entity) {
 	// hitbox
 	if (world->registry.has<Collidable>(entity)) {
 		const auto &collidable = world->registry.get<Collidable>(entity);
-		ellipseColor(_renderer, ipos.x, ipos.y, _viewxform->scale * collidable.circle_radius, _viewxform->scale * collidable.circle_radius / 1.73, SDL_ColortoUint32(SDL_Colors::GREEN));
+		ellipseColor(_renderer, ipos.x, ipos.y, 1.41 * _viewxform->scale * collidable.circle_radius, 1.41 * _viewxform->scale * collidable.circle_radius / 1.73, SDL_ColortoUint32(SDL_Colors::GREEN));
 	}
 	ipos.y -= sdata.z;
 	switch(renderable.type) {
@@ -326,7 +326,6 @@ void CollisionSystem::receive(const MovedEvent &e) {
 		spatial.velocity = {0, 0};
 		mPotentiallyMoved.insert(e.entity);
 		world->registry.destroy(nullentity);
-		std::cout<<"FIXED IT YO"<<std::endl;
 	}
 }
 
