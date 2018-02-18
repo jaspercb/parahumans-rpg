@@ -64,7 +64,9 @@ public:
 	void renderEntity(Entity entity);
 	void update(TimeDelta dt) override;
 private:
-	void renderRectangularPrism(const SpatialData& sdata, const Renderable& renderable);
+	void renderRectangularPrism(
+		const SpatialData& sdata, const Renderable& renderable,
+		SDL_Color fillcolor, SDL_Color linecolor);
 	SDL_Renderer* _renderer;
 	TimeDelta timeSinceStart;
 	const ViewTransform* _viewxform;

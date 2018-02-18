@@ -45,18 +45,26 @@ void renderOvalOffset(SDL_Renderer* renderer, const ViewTransform* view, vec2i i
 	ellipseColor(renderer, screenpos.x, screenpos.y - scale*height, int(rx*scale), int(ry*scale), SDL_ColortoUint32(SDL_Colors::BLACK));
 }
 
-void RenderSystem::renderRectangularPrism(const SpatialData& sdata, const Renderable& renderable) {
-	// Too slow :(
-	// TODO: add scale dependency
-	ViewTransform zerotransform = *_viewxform;
+void RenderRectangularPrism(SDL_Renderer* renderer, const ViewTransform* viewxform, const vec2f position, float xwidth, float ywidth, float height, SDL_Color fillcolor, SDL_Color linecolor) {
+/*
+Face render order
+  +---+
+ / 3 /|
++---+ |
+| 2 |1+
+|   |/
++---+-----> +x
+   /
+  v y
+*/
+	ViewTransform zerotransform = *viewxform;
 	zerotransform.viewcenter = {0, 0};
-	vec2f fpos = _viewxform->screenCoordFromGlobal(sdata.position);
+	vec2f fpos = viewxform->screenCoordFromGlobal(position);
 	vec2i ipos = {fpos.x, fpos.y};
-	vec2f xstep = {-renderable.rectangle_x, 0};
+	vec2f xstep = {-xwidth, 0};
 	xstep = zerotransform.viewCoordFromGlobal(xstep);
-	vec2f ystep = {0, -renderable.rectangle_y};
+	vec2f ystep = {0, -ywidth};
 	ystep = zerotransform.viewCoordFromGlobal(ystep);
-	float height = renderable.rectangle_z;
 	Sint16 vx[4];
 	Sint16 vy[4];
 	vx[0] = ipos.x;
@@ -68,24 +76,36 @@ void RenderSystem::renderRectangularPrism(const SpatialData& sdata, const Render
 	vx[3] = ipos.x + xstep.x;
 	vy[3] = ipos.y + xstep.y;
 
-	filledPolygonColor(_renderer, vx, vy, 4, SDL_ColortoUint32(SDL_Colors::LIGHTGREY));
-	polygonColor(_renderer, vx, vy, 4, SDL_ColortoUint32(SDL_Colors::BLACK));
+	if (height && xwidth && fillcolor.a)
+		filledPolygonColor(renderer, vx, vy, 4, SDL_ColortoUint32(fillcolor));
+	if (height && xwidth && linecolor.a)
+		polygonColor(renderer, vx, vy, 4, SDL_ColortoUint32(linecolor));
 
 	vx[2] = ipos.x + ystep.x;
 	vy[2] = ipos.y + ystep.y - height;
 	vx[3] = ipos.x + ystep.x;
 	vy[3] = ipos.y + ystep.y;
 
-	filledPolygonColor(_renderer, vx, vy, 4, SDL_ColortoUint32(SDL_Colors::LIGHTGREY));
-	polygonColor(_renderer, vx, vy, 4, SDL_ColortoUint32(SDL_Colors::BLACK));
+	if (height && ywidth && fillcolor.a)
+		filledPolygonColor(renderer, vx, vy, 4, SDL_ColortoUint32(fillcolor));
+	if (height && ywidth && linecolor.a)
+		polygonColor(renderer, vx, vy, 4, SDL_ColortoUint32(linecolor));
 
 	vx[0] = ipos.x + xstep.x;
 	vy[0] = ipos.y + xstep.y - height;
 	vx[3] = ipos.x + ystep.x + xstep.x;
 	vy[3] = ipos.y + ystep.y + xstep.y - height;
 
-	filledPolygonColor(_renderer, vx, vy, 4, SDL_ColortoUint32(SDL_Colors::LIGHTGREY));
-	polygonColor(_renderer, vx, vy, 4, SDL_ColortoUint32(SDL_Colors::BLACK));
+	if (xwidth && ywidth && fillcolor.a)
+		filledPolygonColor(renderer, vx, vy, 4, SDL_ColortoUint32(fillcolor));
+	if (xwidth && ywidth && linecolor.a)
+		polygonColor(renderer, vx, vy, 4, SDL_ColortoUint32(linecolor));
+}
+
+void RenderSystem::renderRectangularPrism(const SpatialData& sdata, const Renderable& renderable, SDL_Color fillcolor, SDL_Color linecolor) {
+	// Too slow :(
+	// TODO: add scale dependency
+	RenderRectangularPrism(_renderer, _viewxform, sdata.position, renderable.rectangle_x, renderable.rectangle_y, renderable.rectangle_z, fillcolor, linecolor);
 }
 
 void RenderSystem::renderEntity(Entity entity) {
@@ -96,7 +116,17 @@ void RenderSystem::renderEntity(Entity entity) {
 	// hitbox
 	if (world->registry.has<Collidable>(entity)) {
 		const auto &collidable = world->registry.get<Collidable>(entity);
-		ellipseColor(_renderer, ipos.x, ipos.y, 1.41 * _viewxform->scale * collidable.circle_radius, 1.41 * _viewxform->scale * collidable.circle_radius / 1.73, SDL_ColortoUint32(SDL_Colors::GREEN));
+		switch(collidable.type) {
+		case Collidable::Type::Circle:
+			ellipseColor(
+				_renderer, ipos.x, ipos.y, 1.41 * _viewxform->scale * collidable.circle_radius,
+				1.41 * _viewxform->scale * collidable.circle_radius / 1.73, SDL_ColortoUint32(SDL_Colors::GREEN));
+			break;
+		case Collidable::Type::Rectangle:
+			RenderRectangularPrism(
+				_renderer, _viewxform, sdata.position, -collidable.rectangle_width, -collidable.rectangle_height,
+				0, SDL_Colors::TRANSPARENT, SDL_Colors::GREEN);
+		}
 	}
 	ipos.y -= sdata.z;
 	switch(renderable.type) {
@@ -139,7 +169,7 @@ void RenderSystem::renderEntity(Entity entity) {
 		}
 		case Renderable::Type::RectangularPrism:
 		{
-			renderRectangularPrism(sdata, renderable);
+			renderRectangularPrism(sdata, renderable, renderable.color, SDL_Colors::BLACK);
 		}
 	}
 	// render HP bar if needed
@@ -190,7 +220,7 @@ void RenderSystem::update(TimeDelta dt) {
 		for (int y = miny; y <= maxy; y++) {
 			if(tiles[vec2i{x, y}].collides) {
 				sdata.position = tiles.gridwidth * vec2i{x+1, y+1};
-				renderRectangularPrism(sdata, renderable);
+				renderRectangularPrism(sdata, renderable, SDL_Colors::GREY, SDL_Colors::GREEN);
 			}
 		}
 	}
