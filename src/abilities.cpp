@@ -51,6 +51,7 @@ void PuckAbility::onKeyDown(vec2f target) {
 		// swap location
 		auto &projectileSdata = mWorld->registry.get<SpatialData>(mProjectile.value());
 		std::swap(sdata.position, projectileSdata.position);
+		mWorld->bus.publish<MovedEvent>(mOwner, projectileSdata.position, sdata.position);
 		// make explosion
 		(*mInstantAreaEffect)(mWorld, sdata.position);
 		(*mInstantAreaEffect)(mWorld, projectileSdata.position);

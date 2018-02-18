@@ -306,7 +306,28 @@ bool CollisionSystem::_collides(const SpatialData &spatial1,
 }
 
 void CollisionSystem::receive(const MovedEvent &e) {
+	if (!world->registry.has<Collidable>(e.entity)) return;
 	mPotentiallyMoved.insert(e.entity);
+
+	// Resolve tile collisions.
+	auto& tiles = world->registry.get<TileLayout>();
+	auto& spatial = world->registry.get<SpatialData>(e.entity);
+	const auto& collidable = world->registry.get<Collidable>(e.entity);
+
+	if (isCollidingWithTile(spatial, collidable, tiles)) {
+		spatial.velocity.truncate(0.01 * tiles.gridwidth);
+		while (isCollidingWithTile(spatial, collidable, tiles)) {
+			// Quick hacky solution: rewind the movement that created the collision.
+			// TODO: Less hacky collision resolution. Maybe wait to see which collision geometry is common?
+			spatial.position -= spatial.velocity;
+		}
+		auto nullentity = world->registry.create();
+		world->bus.publish<CollidedEvent>(e.entity, nullentity);
+		spatial.velocity = {0, 0};
+		mPotentiallyMoved.insert(e.entity);
+		world->registry.destroy(nullentity);
+		std::cout<<"FIXED IT YO"<<std::endl;
+	}
 }
 
 void CollisionSystem::receive(const EntityDestroyedEvent &e) {
@@ -367,27 +388,6 @@ bool CollisionSystem::isCollidingWithTile(const SpatialData& spatial, const Coll
 }
 
 void CollisionSystem::update(TimeDelta dt) {
-	// Resolve tile quirks.
-	auto& tiles = world->registry.get<TileLayout>();
-	world->registry.view<SpatialData, Collidable>().each([this, &tiles, dt](auto entity, auto &spatial, const auto &collidable) {
-		bool fix = false;
-		while (isCollidingWithTile(spatial, collidable, tiles)) {
-			spatial.velocity.truncate(0.1 * tiles.gridwidth);
-			// Quick hacky solution: rewind the movement that created the collision.
-			// TODO: Less hacky collision resolution. Maybe wait to see which collision geometry is common?
-			spatial.position -= spatial.velocity * dt;
-			fix = true;
-		}
-		if (fix) {
-			auto nullentity = world->registry.create();
-			world->bus.publish<CollidedEvent>(entity, nullentity);
-			spatial.velocity = {0, 0};
-			mPotentiallyMoved.insert(entity);
-			world->registry.destroy(nullentity);
-			std::cout<<"FIXED IT YO"<<std::endl;
-		}
-	});
-
 	// add all relevant things to the collision map
 	world->registry.view<SpatialData, Collidable>().each([this](auto entity, const auto &spatial, const auto &collidable) {
 		if (!isWatching(entity)) {
