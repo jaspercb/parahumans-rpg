@@ -21,9 +21,15 @@ Stat StatVulnerabilityTo(Damage::Type damagetype) {
 	}
 }
 
-void MovementSystem::update(TimeDelta dt) {
-	world->registry.view<SpatialData>().each([dt, this](auto entity, auto &sdata) {
+void MovementSystem::update(TimeDelta _dt) {
+	world->registry.view<SpatialData>().each([_dt, this](auto entity, auto &sdata) {
+		TimeDelta dt = _dt;
 		auto oldpos = sdata.position;
+
+		if (world->registry.has<Stats>(entity)) {
+			const auto& stats = world->registry.get<Stats>(entity);
+			dt *= stats[Stat::SUBJECTIVE_TIME_RATE];
+		}
 		if (sdata.isMoving()) {
 			sdata.position.x += sdata.velocity.x * dt;
 			sdata.position.y += sdata.velocity.y * dt;

@@ -37,8 +37,8 @@ public:
 		world.addSystem(std::make_shared<CollisionHandlerSystem>());
 		world.addSystem(std::make_shared<AbilitySystem>());
 		world.addSystem(std::make_shared<TimeOutSystem>());
-		world.addSystem(std::make_shared<CameraTrackingSystem>(&viewxform));
-		world.addSystem(std::make_shared<RenderSystem>(renderer, &viewxform));
+		world.addDisplaySystem(std::make_shared<CameraTrackingSystem>(&viewxform));
+		world.addDisplaySystem(std::make_shared<RenderSystem>(renderer, &viewxform));
 
 		// Tile system
 		if (true) {
@@ -66,9 +66,9 @@ public:
 			world.registry.assign<Stats>(entity, 133 /*movespeed*/, 40 /*accel*/);
 			auto &abilitydata = world.registry.assign<AbilityData>(entity);
 			abilitydata.abilities.push_back(TestProjectileAbility(&world, entity));
-			//abilitydata.abilities.push_back(TestBuffAbility(&world, entity, Condition{Condition::Priority::Multiplier, Condition::Type::MOD_SPEED, 2, 1 /* seconds */}));
+			abilitydata.abilities.push_back(TestBuffAbility(&world, entity, Condition{Condition::Type::STAT_MULTIPLY, 0.0, 1 /* seconds */, Stat::SUBJECTIVE_TIME_RATE, true}));
 			//abilitydata.abilities.push_back(TestAreaEffectTargetAbility(&world, entity));
-			abilitydata.abilities.push_back(TestPuckAbility(&world, entity));
+			//abilitydata.abilities.push_back(TestPuckAbility(&world, entity));
 			//abilitydata.abilities.push_back(TestHeartseekerAbility(&world, entity));
 			world.registry.attach<CameraFocus>(entity);
 		}
@@ -114,7 +114,18 @@ public:
 		int currentFrameTimeMilliseconds = SDL_GetTicks();
 		TimeDelta timePassedSeconds = (currentFrameTimeMilliseconds - lastFrameTimeMilliseconds) / 1000.0;
 		timePassedSeconds = 0.03;
-		world.update_all(timePassedSeconds);
+		if (world.registry.has<CameraFocus>()) {
+			Entity attachee = world.registry.attachee<CameraFocus>();
+			const auto& stats = world.registry.get<Stats>(attachee);
+			if (stats[Stat::SUBJECTIVE_TIME_RATE] != 0) {
+				world.update_all(timePassedSeconds/stats[Stat::SUBJECTIVE_TIME_RATE]);
+			} else {
+				world.update_nondisplay(timePassedSeconds);
+				return;
+			}
+		} else {
+			world.update_all(timePassedSeconds);
+		}
 
 		lastFrameTimeMilliseconds = currentFrameTimeMilliseconds;
 		int postFrameTimeMilliseconds = SDL_GetTicks();

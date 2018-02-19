@@ -17,17 +17,31 @@ struct World {
 	                 Control_UseAbilityEvent,
 	                 Control_MoveAccelEvent,
 	                 EntityDestroyedEvent> bus;
-	std::list<std::shared_ptr<System>> systems;
+	std::list<std::shared_ptr<System>> systems, nondisplaysystems;
 
 	template<typename SystemType> void addSystem(std::shared_ptr<SystemType> system) {
 		system->world = this;
 		system->init();
 		bus.reg(system);
-		systems.push_back(std::move(system));
+		systems.push_back(system);
+		nondisplaysystems.push_back(system);
+	}
+
+	template<typename SystemType> void addDisplaySystem(std::shared_ptr<SystemType> system) {
+		system->world = this;
+		system->init();
+		bus.reg(system);
+		systems.push_back(system);
 	}
 
 	void update_all(TimeDelta dt) {
 		for (auto &system : systems) {
+			system->update(dt);
+		}
+	}
+
+	void update_nondisplay(TimeDelta dt) {
+		for (auto &system : nondisplaysystems) {
 			system->update(dt);
 		}
 	}
