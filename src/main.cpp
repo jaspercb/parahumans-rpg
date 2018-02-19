@@ -64,12 +64,12 @@ public:
 			world.registry.assign<Collidable>(entity, CircleCollidable(20));
 			world.registry.assign<Conditions>(entity);
 			world.registry.assign<Stats>(entity, 133 /*movespeed*/, 40 /*accel*/);
-			auto &abilitydata = world.registry.assign<AbilityData>(entity);
-			abilitydata.abilities.push_back(TestProjectileAbility(&world, entity));
-			abilitydata.abilities.push_back(TestBuffAbility(&world, entity, Condition{Condition::Type::STAT_MULTIPLY, 0.0, 1 /* seconds */, Stat::SUBJECTIVE_TIME_RATE, true}));
-			//abilitydata.abilities.push_back(TestAreaEffectTargetAbility(&world, entity));
-			//abilitydata.abilities.push_back(TestPuckAbility(&world, entity));
-			//abilitydata.abilities.push_back(TestHeartseekerAbility(&world, entity));
+			auto &abilitydata = world.registry.assign<AbilityList>(entity);
+			abilitydata.abilities.push_back(AbilityFactory::TestProjectileAbility(&world, entity));
+			//abilitydata.abilities.push_back(AbilityFactory::TestBuffAbility(&world, entity, Condition{Condition::Type::STAT_MULTIPLY, 0.0, 1 /* seconds */, Stat::SUBJECTIVE_TIME_RATE, true}));
+			//abilitydata.abilities.push_back(AbilityFactory::TestAreaEffectTargetAbility(&world, entity));
+			abilitydata.abilities.push_back(AbilityFactory::TestPuckAbility(&world, entity));
+			//abilitydata.abilities.push_back(AbilityFactory::TestHeartseekerAbility(&world, entity));
 			world.registry.attach<CameraFocus>(entity);
 		}
 		for (int i=0; i<8; i++) {

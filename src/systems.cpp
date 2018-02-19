@@ -261,7 +261,6 @@ void CameraTrackingSystem::update(TimeDelta dt) {
 	if (!world->registry.has<CameraFocus>()) return;
 	Entity attachee = world->registry.attachee<CameraFocus>();
 	const auto& spatial = world->registry.get<SpatialData>(attachee);
-	std::cout<<spatial.position.x << " " << spatial.position.y <<std::endl;
 	vec2f diff = spatial.position + VELOCITY_WEIGHTING * spatial.velocity - _viewxform->viewcenter;
 	_viewxform->viewcenter += CATCHUP_SPEED * diff;
 }
@@ -545,7 +544,7 @@ void InputSystem::receive(const SDL_Event& e) {
 		}
 		auto target = getMouseGlobalCoords();
 		world->registry.view<Controllable>().each([this, &target, abilityUseType, abilityID](auto entity, const auto &controllable) {
-			const auto &abilityData = world->registry.get<AbilityData>(entity);
+			const auto &abilityData = world->registry.get<AbilityList>(entity);
 			if (abilityID < abilityData.abilities.size())
 				world->bus.publish<Control_UseAbilityEvent>(entity, abilityUseType, target, abilityData.abilities.at(abilityID));
 		});
@@ -692,7 +691,7 @@ void ControlSystem::receive(const Control_UseAbilityEvent& e) {
 }
 
 void AbilitySystem::update(TimeDelta dt) {
-	world->registry.view<AbilityData>().each([dt, this](auto entity, auto &abilitydata) {
+	world->registry.view<AbilityList>().each([dt, this](auto entity, auto &abilitydata) {
 		Stats* stats = world->registry.has<Stats>(entity) ? &world->registry.get<Stats>(entity) : nullptr;
 		TimeDelta subjectivedt = stats ? (*stats)[Stat::SUBJECTIVE_TIME_RATE] * dt : dt;
 		for (auto &ability : abilitydata.abilities) {

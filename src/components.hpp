@@ -1,6 +1,6 @@
 #pragma once
 
-#include <unordered_set>
+#include <set>
 #include <map>
 #include <list>
 #include <vector>
@@ -128,7 +128,7 @@ struct Collidable {
 	// Whether we want to add an entity to our ignore list after colliding
 	bool ignoreRepeatCollisions;
 	bool collidesWithTiles = true;
-	std::unordered_set<Entity> ignored;
+	std::set<Entity> ignored;
 
 	Collidable(Type type, float arg1, int collisionsUntilDestroyed=-1, TimeDelta timeUntilCollidable=0.0, bool collidesWithTiles=true)
 		: type(type), circle_radius(arg1), collisionsUntilDestroyed(collisionsUntilDestroyed), timeUntilCollidable(timeUntilCollidable),
@@ -161,7 +161,7 @@ struct Controllable {
 	Controllable() {}
 };
 
-struct AbilityData {
+struct AbilityList {
 	std::vector<std::shared_ptr<Ability>> abilities;
 };
 

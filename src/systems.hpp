@@ -66,7 +66,7 @@ public:
 private:
 	void renderRectangularPrism(
 		const SpatialData& sdata, const Renderable& renderable,
-		SDL_Color fillcolor, SDL_Color linecolor);
+		SDL_Color fillcolor=SDL_Colors::LIGHTGREY, SDL_Color linecolor=SDL_Colors::BLACK);
 	SDL_Renderer* _renderer;
 	TimeDelta timeSinceStart;
 	const ViewTransform* _viewxform;
@@ -107,8 +107,8 @@ private:
 	bool isCollidingWithTile(
 		const SpatialData& spatial, const Collidable& collidable,
 		TileLayout& layout);
-	std::unordered_set<Entity> mToDestroy;
-	std::unordered_set<Entity> mPotentiallyMoved;
+	std::set<Entity> mToDestroy;
+	std::set<Entity> mPotentiallyMoved;
 };
 
 class DestructibleSystem : public System {
@@ -118,7 +118,7 @@ public:
 	void receive(const HealedEvent &e);
 	void update(TimeDelta dt) override;
 private:
-	std::unordered_set<Entity> mToDestroy;
+	std::set<Entity> mToDestroy;
 };
 
 class InputSystem : public System {
