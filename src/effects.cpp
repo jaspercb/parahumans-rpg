@@ -5,7 +5,7 @@ void InstantSingleCondition::__apply(World* world, Entity e) {
 }
 
 void InstantSingleDamage::__apply(World* world, Entity e) {
-	world->bus.publish<DamagedEvent>(mData.owner /* TODO: should be owner */, e, mDamage);
+	world->bus.publish<DamagedEvent>(mData.owner, e, mDamage);
 }
 
 void InstantAreaExplosion::operator()(World* world, vec2f position) {

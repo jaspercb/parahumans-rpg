@@ -75,7 +75,8 @@ struct Control_MoveAccelEvent : public ControlEvent {
 struct Control_UseAbilityEvent : public ControlEvent {
 	enum Type {
 		KeyDown,
-		KeyUp
+		KeyUp,
+		MouseMove
 		// Click-and-drag
 	};
 	Type type;

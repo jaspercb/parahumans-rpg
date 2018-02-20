@@ -1,3 +1,5 @@
+#include <stdlib.h>
+
 #include "abilities.hpp"
 #include "World.hpp"
 
@@ -22,10 +24,34 @@ Entity BasicProjectileAbility::makeProjectile(vec2f position, vec2f target) {
 	return projectile;
 }
 
+void SprayAbility::onKeyDown(vec2f target) {
+	firing = true;
+	mData.timeSinceUsed = 0.0;
+}
+
+void SprayAbility::onKeyUp(vec2f target) {
+	firing = false;
+}
+
+void SprayAbility::onMouseMove(vec2f target) {
+	focus = target;
+}
+
+void SprayAbility::update(TimeDelta dt) {
+	if (firing) {
+		auto &sdata = mData.world->registry.get<SpatialData>(mData.owner);
+		auto direction = focus - sdata.position;
+		float angle = (rand() % 10000 - 5000.0)/10000;
+		direction.rotate(angle);
+		makeProjectile(sdata.position, sdata.position + direction);
+	} else {
+		mData.timeSinceUsed += dt;
+	}
+}
+
 void HeartseekerAbility::onKeyDown(vec2f target) {
 	auto &sdata = mData.world->registry.get<SpatialData>(mData.owner);
 	mActiveProjectile = makeProjectile(sdata.position, target);
-	assert(mActiveProjectile);
 }
 
 void HeartseekerAbility::onKeyUp(vec2f target) {
@@ -123,6 +149,16 @@ std::shared_ptr<Ability> AbilityFactory::TestPuckAbility(World* world, Entity ow
 
 std::shared_ptr<Ability> AbilityFactory::TestHeartseekerAbility(World* world, Entity owner) {
 	auto ability = std::make_shared<HeartseekerAbility>(world, owner, 500, 10);
+	ability->addEffect(
+		std::make_shared<InstantSingleDamage>(
+			Damage{Damage::Type::Impact, 10},
+			ability->mData));
+	ability->addIgnored(owner);
+	return ability;
+}
+
+std::shared_ptr<Ability> AbilityFactory::TestSprayAbility(World* world, Entity owner) {
+	auto ability = std::make_shared<SprayAbility>(world, owner, 500, 2);
 	ability->addEffect(
 		std::make_shared<InstantSingleDamage>(
 			Damage{Damage::Type::Impact, 10},

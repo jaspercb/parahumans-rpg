@@ -28,8 +28,10 @@ public:
 		: mData{world, owner, 99.9} {}
 	virtual void onKeyDown(vec2f target) {};
 	virtual void onKeyUp(vec2f target) {};
+	virtual void onMouseMove(vec2f target) {};
+	virtual void whileKeyHeld(vec2f target) {};
 	virtual bool isUsable() { return true; };
-	void update(TimeDelta dt) {
+	virtual void update(TimeDelta dt) {
 		mData.timeSinceUsed += dt;
 	}
 	void addIgnored(Entity e) {
@@ -78,6 +80,22 @@ private:
 	std::vector<std::shared_ptr<InstantSingleEffect>> mInstantSingleEffects;
 	float mProjectileSpeed;
 	float mProjectileRadius;
+};
+
+class SprayAbility : public BasicProjectileAbility {
+public:
+	SprayAbility(World* world, Entity owner, float projectileSpeed, float projectileRadius)
+		: BasicProjectileAbility(world, owner, projectileSpeed, projectileRadius) {};
+	void onKeyDown(vec2f target) override;
+	void onKeyUp(vec2f target) override;
+	void onMouseMove(vec2f target) override;
+	virtual void update(TimeDelta dt) override;
+private:
+	bool firing;
+	vec2f focus;
+	//float spread;
+	//float presses;
+	// TimeDelta firetime;
 };
 
 class HeartseekerAbility : public BasicProjectileAbility {
@@ -139,4 +157,5 @@ public:
 	static std::shared_ptr<Ability> TestAreaEffectTargetAbility(World* world, Entity owner);
 	static std::shared_ptr<Ability> TestPuckAbility(World* world, Entity owner);
 	static std::shared_ptr<Ability> TestHeartseekerAbility(World* world, Entity owner);
+	static std::shared_ptr<Ability> TestSprayAbility(World* world, Entity owner);
 };

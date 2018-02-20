@@ -582,6 +582,10 @@ void InputSystem::update(TimeDelta dt) {
 			accel.y += 1;
 		}
 		world->bus.publish<Control_MoveAccelEvent>(entity, accel);
+		auto target = getMouseGlobalCoords();
+		const auto &abilityData = world->registry.get<AbilityList>(entity);
+		for (auto abilityID = 0; abilityID<abilityData.abilities.size(); abilityID++)
+			world->bus.publish<Control_UseAbilityEvent>(entity, Control_UseAbilityEvent::Type::MouseMove, target, abilityData.abilities.at(abilityID));
 	});
 }
 
@@ -687,6 +691,8 @@ void ControlSystem::receive(const Control_UseAbilityEvent& e) {
 		e.ability->onKeyDown(e.target); break;
 	case Control_UseAbilityEvent::KeyUp:
 		e.ability->onKeyUp(e.target); break;
+	case Control_UseAbilityEvent::MouseMove:
+		e.ability->onMouseMove(e.target); break;
 	}
 }
 

@@ -68,8 +68,9 @@ public:
 			abilitydata.abilities.push_back(AbilityFactory::TestProjectileAbility(&world, entity));
 			//abilitydata.abilities.push_back(AbilityFactory::TestBuffAbility(&world, entity, Condition{Condition::Type::STAT_MULTIPLY, 0.0, 1 /* seconds */, Stat::SUBJECTIVE_TIME_RATE, true}));
 			//abilitydata.abilities.push_back(AbilityFactory::TestAreaEffectTargetAbility(&world, entity));
-			abilitydata.abilities.push_back(AbilityFactory::TestPuckAbility(&world, entity));
+			//abilitydata.abilities.push_back(AbilityFactory::TestPuckAbility(&world, entity));
 			//abilitydata.abilities.push_back(AbilityFactory::TestHeartseekerAbility(&world, entity));
+			abilitydata.abilities.push_back(AbilityFactory::TestSprayAbility(&world, entity));
 			world.registry.attach<CameraFocus>(entity);
 		}
 		for (int i=0; i<8; i++) {
